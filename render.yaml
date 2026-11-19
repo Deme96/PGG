@@ -1,5 +1,14 @@
 services:
   - type: web
+    name: portal-gospel-guineense
+    runtime: static
+    buildCommand: npm ci --include=dev && npm run build --workspace=Frontend
+    staticPublishPath: Frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://pgg-x80n.onrender.com/api
+
+  - type: web
     name: pgg-api
     runtime: node
     buildCommand: npm ci --include=dev && npm run build --workspace=Backend

@@ -120,9 +120,9 @@ O acesso de administrador utiliza o e-mail `admin@portalgospel.gw`. Não existe 
 
 ### Deploy do backend no Render
 
-O ficheiro `render.yaml` configura o serviço web `pgg-api` e solicita `DATABASE_URL` e `PGG_ADMIN_PASSWORD` como variáveis secretas durante a criação do Blueprint. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db` (ou com a URL apropriada ao local de execução) e defina uma palavra-passe forte para o administrador. Não guarde estes valores no repositório nem os envie por chat. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend recebe `VITE_API_URL` para chamar a API no backend; se o endereço público da API mudar, atualize esse valor no Blueprint e faça novo deploy do frontend. O Blueprint solicita `DATABASE_URL` e `PGG_ADMIN_PASSWORD` como variáveis secretas durante a criação. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db` (ou com a URL apropriada ao local de execução) e defina uma palavra-passe forte para o administrador. Não guarde estes valores no repositório nem os envie por chat. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
-Para o **Static Site** do frontend, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. Configure `VITE_API_URL` com a URL pública do backend (por exemplo, `https://pgg-api.onrender.com/api`). Essa variável é incorporada ao bundle durante o build; não coloque nela a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
+Se preferir configurar o Static Site manualmente, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. Configure `VITE_API_URL` com a URL pública do backend, incluindo `/api`. Essa variável é incorporada ao bundle durante o build; não coloque nela a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
 ### 2. Iniciar apenas o Servidor Backend (API REST)
 ```bash

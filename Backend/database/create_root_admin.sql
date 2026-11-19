@@ -5,7 +5,7 @@ BEGIN
   IF LOWER(CURRENT_DATABASE()) <> 'pgg_db' THEN
     RAISE EXCEPTION 'Execute este script ligado à base pgg_db (base atual: %).', CURRENT_DATABASE();
   END IF;
-END
+END;
 $$;
 
 -- A palavra-passe deste administrador vem de PGG_ADMIN_PASSWORD no Render.
