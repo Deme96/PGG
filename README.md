@@ -112,6 +112,13 @@ npm run dev:all
 ```
 
 O acesso de administrador utiliza o e-mail `admin@portalgospel.gw`. Não existe palavra-passe padrão; a API rejeita o login até que `PGG_ADMIN_PASSWORD` esteja configurada.
+Para desenvolvimento local, copie `.env.example` para `.env` e substitua o valor de exemplo por uma palavra-passe forte. O `.env` é ignorado pelo Git.
+
+### Deploy do backend no Render
+
+O ficheiro `render.yaml` configura o serviço web `pgg-api` e solicita `PGG_ADMIN_PASSWORD` como variável secreta durante a criação do Blueprint. Defina uma palavra-passe forte no painel do Render; o valor não deve ser guardado no repositório nem enviado como ficheiro `.env`. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+
+Para o **Static Site** do frontend, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. Configure `VITE_API_URL` com a URL pública do backend (por exemplo, `https://pgg-api.onrender.com/api`). Essa variável é incorporada ao bundle durante o build; não coloque nela a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
 ### 2. Iniciar apenas o Servidor Backend (API REST)
 ```bash

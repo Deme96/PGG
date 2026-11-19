@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: pgg-api
+    runtime: node
+    buildCommand: npm ci --include=dev
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    envVars:
+      - key: PGG_ADMIN_PASSWORD
+        sync: false

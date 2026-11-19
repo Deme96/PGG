@@ -1,6 +1,9 @@
 import type { MusicRequest, User } from '../types';
 
-const API_BASE = '/api';
+const configuredApiBase = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '');
+const API_BASE = configuredApiBase
+  ? (/\/api$/i.test(configuredApiBase) ? configuredApiBase : `${configuredApiBase}/api`)
+  : '/api';
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T | null> {
   try {

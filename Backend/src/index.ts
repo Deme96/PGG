@@ -1,9 +1,14 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { apiRouter } from './routes/apiRouter.ts';
 import { getAdminSession, getBearerToken } from './auth/adminAuth.ts';
 import { canAccessAdminPath } from './auth/adminPermissions.ts';
 import { musicUploadsDirectory } from './middleware/musicUpload.ts';
+
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
