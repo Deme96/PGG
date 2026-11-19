@@ -60,29 +60,32 @@ export const FollowerZone: React.FC<FollowerZoneProps> = ({ onOpenArticle, onOpe
     m => m.contactEmail?.toLowerCase() === currentUser.email.toLowerCase() || currentUser.role === 'admin'
   );
 
-  const handleCoverageSubmit = (e: React.FormEvent) => {
+  const handleCoverageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventTitle || !location || !eventDate) {
       alert('Preencha os campos obrigatórios.');
       return;
     }
 
-    addCoverageRequest({
-      requesterName: currentUser.name,
-      requesterEmail: currentUser.email,
-      requesterPhone: currentUser.phone || '+245 955 000 000',
-      eventTitle,
-      eventType,
-      churchOrEntity: churchOrEntity || 'Igreja Local',
-      location,
-      eventDate,
-      eventTime: eventTime || '10:00',
-      notes
-    });
-
-    setCoverageModalOpen(false);
-    setActiveTab('requests');
-    alert('Pedido de cobertura registado com sucesso! A redação irá analisar a solicitação.');
+    try {
+      await addCoverageRequest({
+        requesterName: currentUser.name,
+        requesterEmail: currentUser.email,
+        requesterPhone: currentUser.phone || '+245 955 000 000',
+        eventTitle,
+        eventType,
+        churchOrEntity: churchOrEntity || 'Igreja Local',
+        location,
+        eventDate,
+        eventTime: eventTime || '10:00',
+        notes
+      });
+      setCoverageModalOpen(false);
+      setActiveTab('requests');
+      alert('Pedido de cobertura registado com sucesso! A redação irá analisar a solicitação.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Não foi possível registar o pedido.');
+    }
   };
 
   return (
@@ -189,7 +192,9 @@ export const FollowerZone: React.FC<FollowerZoneProps> = ({ onOpenArticle, onOpe
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        toggleBookmark(currentUser.id, art.id);
+                        void toggleBookmark(currentUser.id, art.id).catch(error => {
+                          alert(error instanceof Error ? error.message : 'Não foi possível guardar o artigo.');
+                        });
                       }}
                       className="text-xs text-rose-600 hover:underline font-medium"
                     >

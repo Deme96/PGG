@@ -22,7 +22,7 @@ import { Music, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export function App() {
   const { isAdmin } = useAuth();
-  const { articles, videos, artists } = useData();
+  const { articles, videos, artists, dataReady, dataLoadError } = useData();
   const { t } = useLanguage();
 
   const [currentView, setCurrentView] = useState<string>('home');
@@ -31,6 +31,30 @@ export function App() {
 
   // Featured article for home page
   const featuredArticle = articles.find(a => a.isFeatured) || articles[0];
+
+  if (!dataReady) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#FAF8F4] px-4">
+        <section role={dataLoadError ? 'alert' : 'status'} className="max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+          <h1 className="text-xl font-bold text-[#14243B]">
+            {dataLoadError ? 'Não foi possível ligar ao sistema' : 'A ligar ao sistema…'}
+          </h1>
+          <p className="mt-3 text-sm text-slate-600">
+            {dataLoadError || 'A carregar os dados do PostgreSQL.'}
+          </p>
+          {dataLoadError && (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-xl bg-[#14243B] px-5 py-3 text-sm font-bold text-white"
+            >
+              Tentar novamente
+            </button>
+          )}
+        </section>
+      </main>
+    );
+  }
 
   const handleNavigate = (view: string, detailId?: string) => {
     setCurrentView(view);

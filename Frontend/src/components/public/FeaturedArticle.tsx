@@ -23,7 +23,9 @@ export const FeaturedArticle: React.FC<FeaturedArticleProps> = ({ article, onOpe
       alert('Por favor inicie sessão para guardar artigos na sua Zona do Seguidor.');
       return;
     }
-    toggleBookmark(currentUser.id, article.id);
+    void toggleBookmark(currentUser.id, article.id).catch(error => {
+      alert(error instanceof Error ? error.message : 'Não foi possível guardar o artigo.');
+    });
   };
 
   const handleShareClick = (e: React.MouseEvent) => {

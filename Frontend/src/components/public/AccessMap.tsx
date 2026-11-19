@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Globe, Users, TrendingUp, Navigation, Sparkles } from 'lucide-react';
+import { Globe, Users, TrendingUp, Navigation } from 'lucide-react';
 
 export const AccessMap: React.FC = () => {
-  const { visitorPings, registerVisitorPing } = useData();
+  const { visitorPings } = useData();
   const { t } = useLanguage();
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null);
 
@@ -42,20 +42,6 @@ export const AccessMap: React.FC = () => {
   const googleMapsEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=8&output=embed`;
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
-  // Quick simulate access action to prove live reactivity
-  const handleSimulateVisitor = () => {
-    const locations = [
-      { city: 'Bissau', countryName: 'Guiné-Bissau', countryCode: 'GW', lat: 11.8632, lng: -15.5984 },
-      { city: 'Gabú', countryName: 'Guiné-Bissau', countryCode: 'GW', lat: 12.2833, lng: -14.2167 },
-      { city: 'Bafatá', countryName: 'Guiné-Bissau', countryCode: 'GW', lat: 12.1667, lng: -14.6667 },
-      { city: 'Lisboa', countryName: 'Portugal', countryCode: 'PT', lat: 38.7223, lng: -9.1393 },
-      { city: 'Dakar', countryName: 'Senegal', countryCode: 'SN', lat: 14.7167, lng: -17.4677 },
-      { city: 'Paris', countryName: 'França', countryCode: 'FR', lat: 48.8566, lng: 2.3522 }
-    ];
-    const picked = locations[Math.floor(Math.random() * locations.length)];
-    registerVisitorPing(picked.city, picked.countryName, picked.countryCode, picked.lat, picked.lng);
-  };
-
   return (
     <div className="my-10 bg-white rounded-3xl shadow-soft border border-navy-100 p-6 sm:p-8">
       {/* Header */}
@@ -83,14 +69,6 @@ export const AccessMap: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleSimulateVisitor}
-            className="px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-[#C9A44C]/40 text-[#14243B] text-xs font-bold flex items-center gap-1.5 transition-colors"
-            title="Simular novo acesso para testar contagem"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#C9A44C]" />
-            <span className="hidden sm:inline">Registar Ping</span>
-          </button>
         </div>
       </div>
 

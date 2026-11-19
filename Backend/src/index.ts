@@ -7,11 +7,13 @@ import { apiRouter } from './routes/apiRouter.ts';
 import { getAdminSession, getBearerToken } from './auth/adminAuth.ts';
 import { canAccessAdminPath } from './auth/adminPermissions.ts';
 import { musicUploadsDirectory } from './middleware/musicUpload.ts';
+import { db, pool } from './db/database.ts';
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors());
@@ -26,17 +28,19 @@ app.use(
   })
 );
 
-app.use('/api', (req, res, next) => {
+app.use('/api', async (req, res, next) => {
   const path = req.path;
   const publicRead =
     req.method === 'GET' &&
-    /^\/(health|settings|articles(?:\/[^/]+)?|videos(?:\/[^/]+)?|artists(?:\/[^/]+)?|carousel-slides|pings)$/.test(path);
+    /^\/(health|settings|articles(?:\/[^/]+)?|videos(?:\/[^/]+)?|artists(?:\/[^/]+)?|carousel-slides|pings|bookmarks\/user\/[^/]+)$/.test(path);
   const publicSubmission =
     req.method === 'POST' &&
     (
       path === '/auth/login' ||
-      path === '/auth/register' ||
+      path === '/auth/community/login' ||
+      path === '/auth/community/register' ||
       path === '/pings/record' ||
+      path === '/bookmarks/toggle' ||
       path === '/coverage-requests' ||
       path === '/music-requests' ||
       /^\/(articles|videos)\/[^/]+\/view$/.test(path)
@@ -44,13 +48,17 @@ app.use('/api', (req, res, next) => {
 
   if (publicRead || publicSubmission) return next();
 
-  const user = getAdminSession(getBearerToken(req.header('authorization')));
-  if (!user) return res.status(401).json({ error: 'É necessário iniciar sessão como administrador.' });
-  if (!canAccessAdminPath(user, path)) {
-    return res.status(403).json({ error: 'A sua conta não tem privilégios para esta área.' });
+  try {
+    const user = await getAdminSession(getBearerToken(req.header('authorization')));
+    if (!user) return res.status(401).json({ error: 'É necessário iniciar sessão como administrador.' });
+    if (!canAccessAdminPath(user, path)) {
+      return res.status(403).json({ error: 'A sua conta não tem privilégios para esta área.' });
+    }
+    res.locals.adminUser = user;
+    next();
+  } catch (error) {
+    next(error);
   }
-  res.locals.adminUser = user;
-  next();
 });
 
 // Logging middleware
@@ -71,16 +79,55 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found on Portal Gospel Guineense API' });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`
+app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(`[PGG-API] ${req.method} ${req.originalUrl} failed:`, error);
+  if (res.headersSent) return next(error);
+  res.status(500).json({ error: 'Não foi possível concluir o pedido. Verifique a ligação à base de dados.' });
+});
+
+async function startServer() {
+  try {
+    await db.initialize();
+    app.listen(PORT, () => {
+      console.log(`
   ==============================================================
    PORTAL GOSPEL GUINEENSE (PGG) - SERVIÇO BACKEND REST API
   ==============================================================
    Servidor ativo em:    http://localhost:${PORT}
    Endpoints da API:     http://localhost:${PORT}/api
    Verificação (Health): http://localhost:${PORT}/api/health
-   Base de Dados:        server/data/db.json
+   Base de Dados:        PostgreSQL (DATABASE_URL)
   ==============================================================
   `);
+    });
+  } catch (error) {
+    console.error('[PGG-API] Não foi possível iniciar o backend:', error);
+    await pool.end();
+    process.exitCode = 1;
+  }
+}
+
+void startServer();
+
+==============================================
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT NOW() AS data_hora'
+    );
+
+    res.json({
+      success: true,
+      message: 'PostgreSQL conectado!',
+      data: result.rows
+    });
+
+  } catch (error) {
+    console.error('Erro PostgreSQL:', error.message);
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });

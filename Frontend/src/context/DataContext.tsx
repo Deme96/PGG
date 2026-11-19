@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 import {
   Article,
   Video,
   Artist,
   CarouselSlide,
   Department,
-  DepartmentCode,
   Staff,
   ScheduleEntry,
   CoverageRequest,
@@ -23,28 +23,11 @@ import {
   VisitorPing
 } from '../types';
 
-import {
-  initialSiteSettings,
-  initialCarouselSlides,
-  initialArticles,
-  initialVideos,
-  initialArtists,
-  initialDepartments,
-  initialStaff,
-  initialSchedules,
-  initialCoverageRequests,
-  initialPartnerships,
-  initialMusicRequests,
-  initialFinanceEntries,
-  initialAssets,
-  initialLiabilities,
-  initialTasks,
-  initialSystemLogs,
-  initialBackups,
-  initialVisitorPings
-} from '../data/mockData';
-
 interface DataContextType {
+  dataReady: boolean;
+  dataLoadError: string | null;
+  operationError: string | null;
+  clearOperationError: () => void;
   // Models
   siteSettings: SiteSetting;
   updateSiteSettings: (data: Partial<SiteSetting>) => void;
@@ -85,10 +68,10 @@ interface DataContextType {
   deleteSchedule: (id: string) => void;
 
   coverageRequests: CoverageRequest[];
-  addCoverageRequest: (req: Omit<CoverageRequest, 'id' | 'status' | 'createdAt'>) => CoverageRequest;
+  addCoverageRequest: (req: Omit<CoverageRequest, 'id' | 'status' | 'createdAt'>) => Promise<CoverageRequest>;
   updateCoverageRequest: (id: string, req: Partial<CoverageRequest>) => void;
   deleteCoverageRequest: (id: string) => void;
-  approveCoverageAndCreateSchedule: (requestId: string, staffId: string, assignedDate?: string, assignedTime?: string) => void;
+  approveCoverageAndCreateSchedule: (requestId: string, staffId: string, assignedDate?: string, assignedTime?: string) => Promise<void>;
 
   partnerships: Partnership[];
   addPartnership: (part: Omit<Partnership, 'id'>) => void;
@@ -104,7 +87,7 @@ interface DataContextType {
   deleteMusicRequest: (id: string) => void;
 
   bookmarks: Bookmark[];
-  toggleBookmark: (userId: string, articleId: string) => boolean;
+  toggleBookmark: (userId: string, articleId: string) => Promise<boolean>;
   isBookmarked: (userId: string, articleId: string) => boolean;
   getUserBookmarks: (userId: string) => Article[];
 
@@ -137,103 +120,82 @@ interface DataContextType {
   addLog: (action: string, module: string, details: string, user?: string) => void;
 
   backups: Backup[];
-  addBackup: (type: Backup['type'], user?: string) => void;
-  restoreFromJSON: (jsonData: string) => boolean;
-  exportDatabaseJSON: () => string;
-  resetToDefaultData: () => void;
+  addBackup: (type: Backup['type'], user?: string) => Promise<void>;
+  restoreFromJSON: (jsonData: string) => Promise<void>;
+  exportDatabaseJSON: () => Promise<string>;
 
   visitorPings: VisitorPing[];
-  registerVisitorPing: (city: string, countryName: string, countryCode: string, lat: number, lng: number) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-function loadStorage<T>(key: string, defaultValue: T): T {
-  try {
-    const item = localStorage.getItem(`pgg_${key}`);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch (e) {
-    return defaultValue;
-  }
-}
-
-function saveStorage<T>(key: string, value: T) {
-  try {
-    localStorage.setItem(`pgg_${key}`, JSON.stringify(value));
-  } catch (e) {
-    console.error(`Failed to save pgg_${key}`, e);
-  }
-}
-
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [siteSettings, setSiteSettings] = useState<SiteSetting>(() => loadStorage('settings', initialSiteSettings));
-  const [carouselSlides, setCarouselSlides] = useState<CarouselSlide[]>(() => loadStorage('slides', initialCarouselSlides));
-  const [articles, setArticles] = useState<Article[]>(() => loadStorage('articles', initialArticles));
-  const [videos, setVideos] = useState<Video[]>(() => loadStorage('videos', initialVideos));
-  const [artists, setArtists] = useState<Artist[]>(() => loadStorage('artists', initialArtists));
-  const [departments, setDepartments] = useState<Department[]>(() => loadStorage('departments', initialDepartments));
-  const [staff, setStaff] = useState<Staff[]>(() => loadStorage('staff', initialStaff));
-  const [schedules, setSchedules] = useState<ScheduleEntry[]>(() => loadStorage('schedules', initialSchedules));
-  const [coverageRequests, setCoverageRequests] = useState<CoverageRequest[]>(() => loadStorage('coverage', initialCoverageRequests));
-  const [partnerships, setPartnerships] = useState<Partnership[]>(() => loadStorage('partnerships', initialPartnerships));
-  const [musicRequests, setMusicRequests] = useState<MusicRequest[]>(() => loadStorage('music_reqs', initialMusicRequests));
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => loadStorage('bookmarks', [
-    { id: 'bm-1', userId: 'usr_admin_1', articleId: 'news-1', savedAt: '2026-11-18' }
-  ]));
-  const [finances, setFinances] = useState<FinanceEntry[]>(() => loadStorage('finances', initialFinanceEntries));
-  const [assets, setAssets] = useState<Asset[]>(() => loadStorage('assets', initialAssets));
-  const [liabilities, setLiabilities] = useState<Liability[]>(() => loadStorage('liabilities', initialLiabilities));
-  const [tasks, setTasks] = useState<Task[]>(() => loadStorage('tasks', initialTasks));
-  const [systemLogs, setSystemLogs] = useState<SystemLog[]>(() => loadStorage('logs', initialSystemLogs));
-  const [backups, setBackups] = useState<Backup[]>(() => loadStorage('backups', initialBackups));
-  const [visitorPings, setVisitorPings] = useState<VisitorPing[]>(() => loadStorage('pings', initialVisitorPings));
+  const [siteSettings, setSiteSettings] = useState<SiteSetting>({
+    portalName: '',
+    slogan_pt: '',
+    slogan_en: '',
+    slogan_fr: '',
+    contactPhone: '',
+    contactEmail: '',
+    contactAddress: '',
+    facebookUrl: '',
+    youtubeUrl: '',
+    instagramUrl: '',
+    defaultLanguage: 'pt',
+    maintenanceMode: false,
+    totalVisitorsCount: 0
+  });
+  const [carouselSlides, setCarouselSlides] = useState<CarouselSlide[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
+  const [coverageRequests, setCoverageRequests] = useState<CoverageRequest[]>([]);
+  const [partnerships, setPartnerships] = useState<Partnership[]>([]);
+  const [musicRequests, setMusicRequests] = useState<MusicRequest[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [finances, setFinances] = useState<FinanceEntry[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [liabilities, setLiabilities] = useState<Liability[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [visitorPings, setVisitorPings] = useState<VisitorPing[]>([]);
+  const [dataReady, setDataReady] = useState(false);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
+  const { currentUser, isAdmin } = useAuth();
 
-  // Sync to localStorage
-  useEffect(() => saveStorage('settings', siteSettings), [siteSettings]);
-  useEffect(() => saveStorage('slides', carouselSlides), [carouselSlides]);
-  useEffect(() => saveStorage('articles', articles), [articles]);
-  useEffect(() => saveStorage('videos', videos), [videos]);
-  useEffect(() => saveStorage('artists', artists), [artists]);
-  useEffect(() => saveStorage('departments', departments), [departments]);
-  useEffect(() => saveStorage('staff', staff), [staff]);
-  useEffect(() => saveStorage('schedules', schedules), [schedules]);
-  useEffect(() => saveStorage('coverage', coverageRequests), [coverageRequests]);
-  useEffect(() => saveStorage('partnerships', partnerships), [partnerships]);
-  useEffect(() => saveStorage('music_reqs', musicRequests), [musicRequests]);
-  useEffect(() => saveStorage('bookmarks', bookmarks), [bookmarks]);
-  useEffect(() => saveStorage('finances', finances), [finances]);
-  useEffect(() => saveStorage('assets', assets), [assets]);
-  useEffect(() => saveStorage('liabilities', liabilities), [liabilities]);
-  useEffect(() => saveStorage('tasks', tasks), [tasks]);
-  useEffect(() => saveStorage('logs', systemLogs), [systemLogs]);
-  useEffect(() => saveStorage('backups', backups), [backups]);
-  useEffect(() => saveStorage('pings', visitorPings), [visitorPings]);
+  const clearOperationError = () => setOperationError(null);
+  const reportOperationError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : 'O pedido não foi concluído.';
+    console.error('[PGG] Operação falhou:', error);
+    setOperationError(message);
+  };
 
-  // Initial Sync from Backend API (if online)
+  const persist = async <T,>(request: Promise<T>, onSuccess: (result: T) => void): Promise<void> => {
+    try {
+      onSuccess(await request);
+    } catch (error) {
+      reportOperationError(error);
+    }
+  };
+
   useEffect(() => {
+    let active = true;
     async function syncFromBackend() {
+      setDataReady(false);
+      setDataLoadError(null);
+      setBookmarks([]);
       try {
-        const health = await api.checkHealth();
-        if (!health) return;
-
         const [
           remoteSettings,
           remoteSlides,
           remoteArticles,
           remoteVideos,
           remoteArtists,
-          remoteDepartments,
-          remoteStaff,
-          remoteSchedules,
-          remoteCoverage,
-          remotePartnerships,
-          remoteMusic,
-          remoteFinances,
-          remoteAssets,
-          remoteLiabilities,
-          remoteTasks,
-          remoteLogs,
-          remoteBackups,
           remotePings
         ] = await Promise.all([
           api.getSettings(),
@@ -241,326 +203,211 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           api.getArticles(),
           api.getVideos(),
           api.getArtists(),
-          api.getDepartments(),
-          api.getStaff(),
-          api.getSchedules(),
-          api.getCoverageRequests(),
-          api.getPartnerships(),
-          api.getMusicRequests(),
-          api.getFinances(),
-          api.getAssets(),
-          api.getLiabilities(),
-          api.getTasks(),
-          api.getLogs(),
-          api.getBackups(),
           api.getPings()
         ]);
 
-        if (remoteSettings) setSiteSettings(remoteSettings);
-        if (remoteSlides && remoteSlides.length > 0) setCarouselSlides(remoteSlides);
-        if (remoteArticles && remoteArticles.length > 0) setArticles(remoteArticles);
-        if (remoteVideos && remoteVideos.length > 0) setVideos(remoteVideos);
-        if (remoteArtists && remoteArtists.length > 0) setArtists(remoteArtists);
-        if (remoteDepartments && remoteDepartments.length > 0) setDepartments(remoteDepartments);
-        if (remoteStaff && remoteStaff.length > 0) setStaff(remoteStaff);
-        if (remoteSchedules && remoteSchedules.length > 0) setSchedules(remoteSchedules);
-        if (remoteCoverage && remoteCoverage.length > 0) setCoverageRequests(remoteCoverage);
-        if (remotePartnerships && remotePartnerships.length > 0) setPartnerships(remotePartnerships);
-        if (remoteMusic && remoteMusic.length > 0) setMusicRequests(remoteMusic);
-        if (remoteFinances && remoteFinances.length > 0) setFinances(remoteFinances);
-        if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
-        if (remoteLiabilities && remoteLiabilities.length > 0) setLiabilities(remoteLiabilities);
-        if (remoteTasks && remoteTasks.length > 0) setTasks(remoteTasks);
-        if (remoteLogs && remoteLogs.length > 0) setSystemLogs(remoteLogs);
-        if (remoteBackups && remoteBackups.length > 0) setBackups(remoteBackups);
-        if (remotePings && remotePings.length > 0) setVisitorPings(remotePings);
+        if (!active) return;
+        setSiteSettings(remoteSettings);
+        setCarouselSlides(remoteSlides);
+        setArticles(remoteArticles);
+        setVideos(remoteVideos);
+        setArtists(remoteArtists);
+        setVisitorPings(remotePings);
+
+        if (currentUser) {
+          const remoteBookmarks = await api.getUserBookmarks(currentUser.id);
+          if (active) setBookmarks(remoteBookmarks.bookmarks);
+        }
+
+        if (isAdmin) {
+          const [
+            remoteDepartments, remoteStaff, remoteSchedules, remoteCoverage,
+            remotePartnerships, remoteMusic, remoteFinances, remoteAssets,
+            remoteLiabilities, remoteTasks, remoteLogs, remoteBackups
+          ] = await Promise.all([
+            api.getDepartments(), api.getStaff(), api.getSchedules(), api.getCoverageRequests(),
+            api.getPartnerships(), api.getMusicRequests(), api.getFinances(), api.getAssets(),
+            api.getLiabilities(), api.getTasks(), api.getLogs(), api.getBackups()
+          ]);
+          if (!active) return;
+          setDepartments(remoteDepartments);
+          setStaff(remoteStaff);
+          setSchedules(remoteSchedules);
+          setCoverageRequests(remoteCoverage);
+          setPartnerships(remotePartnerships);
+          setMusicRequests(remoteMusic);
+          setFinances(remoteFinances);
+          setAssets(remoteAssets);
+          setLiabilities(remoteLiabilities);
+          setTasks(remoteTasks);
+          setSystemLogs(remoteLogs);
+          setBackups(remoteBackups);
+        } else {
+          setDepartments([]);
+          setStaff([]);
+          setSchedules([]);
+          setCoverageRequests([]);
+          setPartnerships([]);
+          setMusicRequests([]);
+          setFinances([]);
+          setAssets([]);
+          setLiabilities([]);
+          setTasks([]);
+          setSystemLogs([]);
+          setBackups([]);
+        }
+        if (active) setDataReady(true);
       } catch (err) {
-        console.debug('Backend sync skipped, running on local storage:', err);
+        console.error('Não foi possível carregar os dados do PostgreSQL:', err);
+        if (active) setDataLoadError(err instanceof Error ? err.message : 'Não foi possível carregar os dados do servidor.');
       }
     }
 
     syncFromBackend();
-  }, []);
+    return () => { active = false; };
+  }, [currentUser?.id, isAdmin]);
 
-  // Logging helper
-  const addLog = (action: string, module: string, details: string, user: string = 'Pr. Daniel Sanhá') => {
-    const newLog: SystemLog = {
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      user,
-      action,
-      module,
-      ip: '197.214.12.84 (Bissau)',
-      details
-    };
-    setSystemLogs(prev => [newLog, ...prev]);
+  const addLog = (action: string, module: string, details: string, user = 'Sistema') => {
+    void persist(api.createLog({ action, module, details, user }), log => setSystemLogs(prev => [log, ...prev]));
   };
 
-  // Site Settings
   const updateSiteSettings = (data: Partial<SiteSetting>) => {
-    setSiteSettings(prev => ({ ...prev, ...data }));
-    addLog('Atualização de Definições', 'Configurações', 'Alteração dos parâmetros gerais do portal');
+    void persist(api.updateSettings(data), setSiteSettings);
   };
 
-  // Carousel
   const addCarouselSlide = (slide: Omit<CarouselSlide, 'id'>) => {
-    const newSlide: CarouselSlide = { ...slide, id: `slide_${Date.now()}` };
-    setCarouselSlides(prev => [...prev, newSlide]);
-    addLog('Criação de Slide', 'Carrossel', `Adicionado slide: ${newSlide.title_pt}`);
+    void persist(api.createCarouselSlide(slide), item => setCarouselSlides(prev => [...prev, item]));
   };
-
   const updateCarouselSlide = (id: string, slide: Partial<CarouselSlide>) => {
-    setCarouselSlides(prev => prev.map(s => (s.id === id ? { ...s, ...slide } : s)));
-    addLog('Edição de Slide', 'Carrossel', `Atualizado slide ${id}`);
+    void persist(api.updateCarouselSlide(id, slide), item => setCarouselSlides(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteCarouselSlide = (id: string) => {
-    setCarouselSlides(prev => prev.filter(s => s.id !== id));
-    addLog('Eliminação de Slide', 'Carrossel', `Removido slide ${id}`);
+    void persist(api.deleteCarouselSlide(id), () => setCarouselSlides(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Articles
-  const addArticle = (art: Omit<Article, 'id' | 'views'>) => {
-    const newArt: Article = { ...art, id: `news-${Date.now()}`, views: 0 };
-    setArticles(prev => [newArt, ...prev]);
-    addLog('Criação de Artigo', 'Notícias', `Publicado: ${newArt.title_pt}`);
-    api.createArticle(newArt).catch(() => {});
+  const addArticle = (article: Omit<Article, 'id' | 'views'>) => {
+    void persist(api.createArticle(article), item => setArticles(prev => [item, ...prev]));
   };
-
-  const updateArticle = (id: string, art: Partial<Article>) => {
-    setArticles(prev => prev.map(a => (a.id === id ? { ...a, ...art } : a)));
-    addLog('Edição de Artigo', 'Notícias', `Atualizado artigo ${id}`);
-    api.updateArticle(id, art).catch(() => {});
+  const updateArticle = (id: string, article: Partial<Article>) => {
+    void persist(api.updateArticle(id, article), item => setArticles(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteArticle = (id: string) => {
-    setArticles(prev => prev.filter(a => a.id !== id));
-    addLog('Eliminação de Artigo', 'Notícias', `Removido artigo ${id}`);
-    api.deleteArticle(id).catch(() => {});
+    void persist(api.deleteArticle(id), () => setArticles(prev => prev.filter(row => row.id !== id)));
   };
-
   const incrementArticleViews = (id: string) => {
-    setArticles(prev => prev.map(a => (a.id === id ? { ...a, views: a.views + 1 } : a)));
-    api.recordArticleView(id).catch(() => {});
+    void persist(api.recordArticleView(id), item => setArticles(prev => prev.map(row => row.id === id ? item : row)));
   };
 
-  // Videos
-  const addVideo = (vid: Omit<Video, 'id' | 'views'>) => {
-    const newVid: Video = { ...vid, id: `vid-${Date.now()}`, views: 0 };
-    setVideos(prev => [newVid, ...prev]);
-    addLog('Criação de Vídeo', 'Vídeos', `Adicionado vídeo: ${newVid.title_pt}`);
-    api.createVideo(newVid).catch(() => {});
+  const addVideo = (video: Omit<Video, 'id' | 'views'>) => {
+    void persist(api.createVideo(video), item => setVideos(prev => [item, ...prev]));
   };
-
-  const updateVideo = (id: string, vid: Partial<Video>) => {
-    setVideos(prev => prev.map(v => (v.id === id ? { ...v, ...vid } : v)));
-    addLog('Edição de Vídeo', 'Vídeos', `Atualizado vídeo ${id}`);
-    api.updateVideo(id, vid).catch(() => {});
+  const updateVideo = (id: string, video: Partial<Video>) => {
+    void persist(api.updateVideo(id, video), item => setVideos(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteVideo = (id: string) => {
-    setVideos(prev => prev.filter(v => v.id !== id));
-    addLog('Eliminação de Vídeo', 'Vídeos', `Removido vídeo ${id}`);
-    api.deleteVideo(id).catch(() => {});
+    void persist(api.deleteVideo(id), () => setVideos(prev => prev.filter(row => row.id !== id)));
   };
-
   const incrementVideoViews = (id: string) => {
-    setVideos(prev => prev.map(v => (v.id === id ? { ...v, views: v.views + 1 } : v)));
-    api.recordVideoView(id).catch(() => {});
+    void persist(api.recordVideoView(id), item => setVideos(prev => prev.map(row => row.id === id ? item : row)));
   };
 
-  // Artists
-  const addArtist = (art: Omit<Artist, 'id'>) => {
-    const newArt: Artist = { ...art, id: `art-${Date.now()}` };
-    setArtists(prev => [...prev, newArt]);
-    addLog('Criação de Artista', 'Artistas', `Adicionado artista: ${newArt.name}`);
+  const addArtist = (artist: Omit<Artist, 'id'>) => {
+    void persist(api.createArtist(artist), item => setArtists(prev => [...prev, item]));
   };
-
-  const updateArtist = (id: string, art: Partial<Artist>) => {
-    setArtists(prev => prev.map(a => (a.id === id ? { ...a, ...art } : a)));
-    addLog('Edição de Artista', 'Artistas', `Atualizado artista ${id}`);
+  const updateArtist = (id: string, artist: Partial<Artist>) => {
+    void persist(api.updateArtist(id, artist), item => setArtists(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteArtist = (id: string) => {
-    setArtists(prev => prev.filter(a => a.id !== id));
-    addLog('Eliminação de Artista', 'Artistas', `Removido artista ${id}`);
+    void persist(api.deleteArtist(id), () => setArtists(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Departments
-  const updateDepartment = (id: string, dept: Partial<Department>) => {
-    setDepartments(prev => prev.map(d => (d.id === id ? { ...d, ...dept } : d)));
-    addLog('Atualização de Departamento', 'Departamentos', `Atualizado departamento ${id}`);
+  const updateDepartment = (id: string, department: Partial<Department>) => {
+    void persist(api.updateDepartment(id, department), item => setDepartments(prev => prev.map(row => row.id === id ? item : row)));
   };
 
-  // Staff
-  const addStaff = (stf: Omit<Staff, 'id'>) => {
-    const newStaff: Staff = { ...stf, id: `stf-${Date.now()}` };
-    setStaff(prev => [...prev, newStaff]);
-    addLog('Admissão de Pessoal', 'Recursos Humanos', `Adicionado colaborador: ${newStaff.name}`);
+  const addStaff = (member: Omit<Staff, 'id'>) => {
+    void persist(api.createStaff(member), item => setStaff(prev => [...prev, item]));
   };
-
-  const updateStaff = (id: string, stf: Partial<Staff>) => {
-    setStaff(prev => prev.map(s => (s.id === id ? { ...s, ...stf } : s)));
-    addLog('Edição de Pessoal', 'Recursos Humanos', `Atualizada ficha do colaborador ${id}`);
+  const updateStaff = (id: string, member: Partial<Staff>) => {
+    void persist(api.updateStaff(id, member), item => setStaff(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteStaff = (id: string) => {
-    setStaff(prev => prev.filter(s => s.id !== id));
-    addLog('Eliminação de Pessoal', 'Recursos Humanos', `Removido colaborador ${id}`);
+    void persist(api.deleteStaff(id), () => setStaff(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Schedules
-  const addSchedule = (sch: Omit<ScheduleEntry, 'id'>) => {
-    const newSch: ScheduleEntry = { ...sch, id: `sch-${Date.now()}` };
-    setSchedules(prev => [newSch, ...prev]);
-    addLog('Agendamento de Escala', 'Recursos Humanos', `Escala criada: ${newSch.serviceName} para ${newSch.staffName}`);
-    void api.createSchedule(newSch).then(saved => {
-      if (saved) {
-        setSchedules(prev => prev.map(schedule => schedule.id === newSch.id ? saved : schedule));
-      }
-    });
+  const addSchedule = (schedule: Omit<ScheduleEntry, 'id'>) => {
+    void persist(api.createSchedule(schedule), item => setSchedules(prev => [item, ...prev]));
   };
-
-  const updateSchedule = (id: string, sch: Partial<ScheduleEntry>) => {
-    setSchedules(prev => prev.map(s => (s.id === id ? { ...s, ...sch } : s)));
-    addLog('Edição de Escala', 'Recursos Humanos', `Atualizado registo de escala ${id}`);
-    void api.updateSchedule(id, sch);
+  const updateSchedule = (id: string, schedule: Partial<ScheduleEntry>) => {
+    void persist(api.updateSchedule(id, schedule), item => setSchedules(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteSchedule = (id: string) => {
-    setSchedules(prev => prev.filter(s => s.id !== id));
-    addLog('Eliminação de Escala', 'Recursos Humanos', `Removido registo de escala ${id}`);
-    void api.deleteSchedule(id);
+    void persist(api.deleteSchedule(id), () => setSchedules(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Coverage Requests & CRITICAL BEHAVIOR:
-  // "Pedido de cobertura aprovado gera entrada na escala."
-  const addCoverageRequest = (req: Omit<CoverageRequest, 'id' | 'status' | 'createdAt'>): CoverageRequest => {
-    const newReq: CoverageRequest = {
-      ...req,
-      id: `cov-${Date.now()}`,
-      status: 'Pendente',
-      createdAt: new Date().toISOString().substring(0, 10)
-    };
-    setCoverageRequests(prev => [newReq, ...prev]);
-    addLog('Novo Pedido de Cobertura', 'Correspondências', `Recebido pedido de ${newReq.requesterName} (${newReq.eventTitle})`);
-    api.createCoverageRequest(newReq).catch(() => {});
-    return newReq;
+  const addCoverageRequest = async (
+    request: Omit<CoverageRequest, 'id' | 'status' | 'createdAt'>
+  ): Promise<CoverageRequest> => {
+    const saved = await api.createCoverageRequest(request);
+    setCoverageRequests(prev => [saved, ...prev]);
+    return saved;
   };
-
-  const updateCoverageRequest = (id: string, req: Partial<CoverageRequest>) => {
-    setCoverageRequests(prev => prev.map(r => (r.id === id ? { ...r, ...req } : r)));
-    addLog('Edição de Pedido de Cobertura', 'Correspondências', `Atualizado pedido ${id}`);
+  const updateCoverageRequest = (id: string, request: Partial<CoverageRequest>) => {
+    void persist(api.updateCoverageRequest(id, request), item => setCoverageRequests(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteCoverageRequest = (id: string) => {
-    setCoverageRequests(prev => prev.filter(r => r.id !== id));
-    addLog('Eliminação de Cobertura', 'Correspondências', `Removido pedido ${id}`);
+    void persist(api.deleteCoverageRequest(id), () => setCoverageRequests(prev => prev.filter(row => row.id !== id)));
   };
-
-  const approveCoverageAndCreateSchedule = (
+  const approveCoverageAndCreateSchedule = async (
     requestId: string,
     staffId: string,
     assignedDate?: string,
     assignedTime?: string
   ) => {
-    const request = coverageRequests.find(r => r.id === requestId);
-    if (!request) return;
-
-    const assignedStaff = staff.find(s => s.id === staffId) || staff[0];
-    const newScheduleId = `sch-cov-${Date.now()}`;
-
-    // 1. Create schedule entry
-    const newSchedule: ScheduleEntry = {
-      id: newScheduleId,
-      serviceName: `Cobertura: ${request.eventTitle} (${request.churchOrEntity})`,
-      departmentCode: (assignedStaff.departmentCode as DepartmentCode) || 'REPORTAGEM',
-      date: assignedDate || request.eventDate,
-      startTime: assignedTime || request.eventTime || '09:00',
-      endTime: '13:00',
-      staffId: assignedStaff.id,
-      staffName: assignedStaff.name,
-      staffIds: [assignedStaff.id],
-      staffNames: [assignedStaff.name],
-      status: 'Pendente',
-      notes: `Gerado automaticamente por aprovação do pedido ${request.id}. Contacto: ${request.requesterName} (${request.requesterPhone})`,
-      location: request.location,
-      coverageRequestId: request.id
-    };
-
-    setSchedules(prev => [newSchedule, ...prev]);
-
-    // 2. Mark request as Approved with schedule link
-    setCoverageRequests(prev =>
-      prev.map(r =>
-        r.id === requestId
-          ? { ...r, status: 'Aprovado', scheduleEntryId: newScheduleId }
-          : r
-      )
+    await persist(
+      api.approveCoverageAndSchedule(requestId, staffId, assignedDate, assignedTime),
+      result => {
+        setSchedules(prev => [result.schedule, ...prev]);
+        setCoverageRequests(prev => prev.map(row => row.id === requestId ? result.request : row));
+      }
     );
-
-    addLog(
-      'Aprovação & Escala Gerada',
-      'Correspondências',
-      `Pedido "${request.eventTitle}" aprovado e atribuído a ${assignedStaff.name} na escala`
-    );
-
-    api.approveCoverageAndSchedule(requestId, staffId, assignedDate, assignedTime).catch(() => {});
   };
 
-  // Partnerships
-  const addPartnership = (part: Omit<Partnership, 'id'>) => {
-    const newPart: Partnership = { ...part, id: `part-${Date.now()}` };
-    setPartnerships(prev => [...prev, newPart]);
-    addLog('Nova Parceria', 'Correspondências', `Acordo com ${newPart.partnerName}`);
+  const addPartnership = (partnership: Omit<Partnership, 'id'>) => {
+    void persist(api.createPartnership(partnership), item => setPartnerships(prev => [...prev, item]));
   };
-
-  const updatePartnership = (id: string, part: Partial<Partnership>) => {
-    setPartnerships(prev => prev.map(p => (p.id === id ? { ...p, ...part } : p)));
-    addLog('Edição de Parceria', 'Correspondências', `Atualizada parceria ${id}`);
+  const updatePartnership = (id: string, partnership: Partial<Partnership>) => {
+    void persist(api.updatePartnership(id, partnership), item => setPartnerships(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deletePartnership = (id: string) => {
-    setPartnerships(prev => prev.filter(p => p.id !== id));
-    addLog('Eliminação de Parceria', 'Correspondências', `Removida parceria ${id}`);
+    void persist(api.deletePartnership(id), () => setPartnerships(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Music Requests
   const addMusicRequest = async (
-    req: Omit<MusicRequest, 'id' | 'status'>,
+    request: Omit<MusicRequest, 'id' | 'status'>,
     files?: { audio?: File; coverImage?: File }
   ): Promise<MusicRequest> => {
-    const newReq = await api.createMusicRequest(req, files);
-    setMusicRequests(prev => [newReq, ...prev]);
-    addLog('Submissão da Zona do Artista', 'Correspondências', `Novo pedido de ${newReq.artistName} - "${newReq.songTitle}"`);
-    return newReq;
+    const saved = await api.createMusicRequest(request, files);
+    setMusicRequests(prev => [saved, ...prev]);
+    return saved;
   };
-
-  const updateMusicRequest = (id: string, req: Partial<MusicRequest>) => {
-    setMusicRequests(prev => prev.map(r => (r.id === id ? { ...r, ...req } : r)));
-    addLog('Edição de Pedido de Música', 'Correspondências', `Atualizado pedido ${id}`);
+  const updateMusicRequest = (id: string, request: Partial<MusicRequest>) => {
+    void persist(api.updateMusicRequest(id, request), item => setMusicRequests(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteMusicRequest = (id: string) => {
-    setMusicRequests(prev => prev.filter(r => r.id !== id));
-    addLog('Eliminação de Pedido de Música', 'Correspondências', `Removido pedido ${id}`);
+    void persist(api.deleteMusicRequest(id), () => setMusicRequests(prev => prev.filter(row => row.id !== id)));
   };
 
-  // Bookmarks (Zona do Seguidor)
-  const toggleBookmark = (userId: string, articleId: string): boolean => {
-    const exists = bookmarks.some(b => b.userId === userId && b.articleId === articleId);
-    if (exists) {
-      setBookmarks(prev => prev.filter(b => !(b.userId === userId && b.articleId === articleId)));
-      return false;
-    } else {
-      const newBm: Bookmark = {
-        id: `bm-${Date.now()}`,
-        userId,
-        articleId,
-        savedAt: new Date().toISOString().substring(0, 10)
-      };
-      setBookmarks(prev => [newBm, ...prev]);
-      return true;
+  const toggleBookmark = async (userId: string, articleId: string): Promise<boolean> => {
+    try {
+      const result = await api.toggleBookmark(userId, articleId);
+      setBookmarks(prev => result.bookmark
+        ? [result.bookmark, ...prev.filter(item => !(item.userId === userId && item.articleId === articleId))]
+        : prev.filter(item => !(item.userId === userId && item.articleId === articleId)));
+      return result.bookmarked;
+    } catch (error) {
+      reportOperationError(error);
+      throw error;
     }
   };
 
@@ -573,24 +420,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return articles.filter(a => userBmArticleIds.includes(a.id));
   };
 
-  // Finances
-  const addFinanceEntry = (fin: Omit<FinanceEntry, 'id'>) => {
-    const newFin: FinanceEntry = { ...fin, id: `fin-${Date.now()}` };
-    setFinances(prev => [newFin, ...prev]);
-    addLog('Lançamento Financeiro', 'Finanças', `${newFin.type}: ${newFin.amount.toLocaleString()} XOF (${newFin.category})`);
-    api.createFinanceEntry(newFin).catch(() => {});
+  const addFinanceEntry = (finance: Omit<FinanceEntry, 'id'>) => {
+    void persist(api.createFinanceEntry(finance), item => setFinances(prev => [item, ...prev]));
   };
-
-  const updateFinanceEntry = (id: string, fin: Partial<FinanceEntry>) => {
-    setFinances(prev => prev.map(f => (f.id === id ? { ...f, ...fin } : f)));
-    addLog('Edição Financeira', 'Finanças', `Atualizado movimento ${id}`);
-    api.updateFinanceEntry(id, fin).catch(() => {});
+  const updateFinanceEntry = (id: string, finance: Partial<FinanceEntry>) => {
+    void persist(api.updateFinanceEntry(id, finance), item => setFinances(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteFinanceEntry = (id: string) => {
-    setFinances(prev => prev.filter(f => f.id !== id));
-    addLog('Eliminação Financeira', 'Finanças', `Removido movimento ${id}`);
-    api.deleteFinanceEntry(id).catch(() => {});
+    void persist(api.deleteFinanceEntry(id), () => setFinances(prev => prev.filter(row => row.id !== id)));
   };
 
   const totalIncome = finances
@@ -603,183 +440,71 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const currentBalance = totalIncome - totalExpense;
 
-  // Assets
   const addAsset = (asset: Omit<Asset, 'id'>) => {
-    const newAst: Asset = { ...asset, id: `ast-${Date.now()}` };
-    setAssets(prev => [...prev, newAst]);
-    addLog('Registo de Ativo', 'Património', `Ativo adicionado: ${newAst.name}`);
+    void persist(api.createAsset(asset), item => setAssets(prev => [...prev, item]));
   };
-
   const updateAsset = (id: string, asset: Partial<Asset>) => {
-    setAssets(prev => prev.map(a => (a.id === id ? { ...a, ...asset } : a)));
-    addLog('Edição de Ativo', 'Património', `Atualizado ativo ${id}`);
+    void persist(api.updateAsset(id, asset), item => setAssets(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteAsset = (id: string) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
-    addLog('Eliminação de Ativo', 'Património', `Removido ativo ${id}`);
+    void persist(api.deleteAsset(id), () => setAssets(prev => prev.filter(row => row.id !== id)));
   };
 
   const totalAssetsValue = assets.reduce((acc, curr) => acc + curr.acquisitionCost, 0);
 
-  // Liabilities
-  const addLiability = (liab: Omit<Liability, 'id'>) => {
-    const newLiab: Liability = { ...liab, id: `liab-${Date.now()}` };
-    setLiabilities(prev => [...prev, newLiab]);
-    addLog('Registo de Passivo', 'Património', `Dívida registada: ${newLiab.creditor} (${newLiab.amount} XOF)`);
+  const addLiability = (liability: Omit<Liability, 'id'>) => {
+    void persist(api.createLiability(liability), item => setLiabilities(prev => [...prev, item]));
   };
-
-  const updateLiability = (id: string, liab: Partial<Liability>) => {
-    setLiabilities(prev => prev.map(l => (l.id === id ? { ...l, ...liab } : l)));
-    addLog('Edição de Passivo', 'Património', `Atualizado passivo ${id}`);
+  const updateLiability = (id: string, liability: Partial<Liability>) => {
+    void persist(api.updateLiability(id, liability), item => setLiabilities(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteLiability = (id: string) => {
-    setLiabilities(prev => prev.filter(l => l.id !== id));
-    addLog('Eliminação de Passivo', 'Património', `Removido passivo ${id}`);
+    void persist(api.deleteLiability(id), () => setLiabilities(prev => prev.filter(row => row.id !== id)));
   };
 
   const totalLiabilitiesValue = liabilities
     .filter(l => l.status !== 'Pago')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  // Tasks
-  const addTask = (tsk: Omit<Task, 'id'>) => {
-    const newTask: Task = { ...tsk, id: `tsk-${Date.now()}` };
-    setTasks(prev => [newTask, ...prev]);
-    addLog('Nova Tarefa', 'Painel Geral', `Tarefa atribuída a ${newTask.assignedTo}: ${newTask.title}`);
+  const addTask = (task: Omit<Task, 'id'>) => {
+    void persist(api.createTask(task), item => setTasks(prev => [item, ...prev]));
   };
-
-  const updateTask = (id: string, tsk: Partial<Task>) => {
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...tsk } : t)));
+  const updateTask = (id: string, task: Partial<Task>) => {
+    void persist(api.updateTask(id, task), item => setTasks(prev => prev.map(row => row.id === id ? item : row)));
   };
-
   const deleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    void persist(api.deleteTask(id), () => setTasks(prev => prev.filter(row => row.id !== id)));
   };
 
   // Backups
-  const addBackup = (type: Backup['type'], user: string = 'Pr. Daniel Sanhá') => {
-    const dateStr = new Date().toISOString().substring(0, 16).replace('T', ' ');
-    const newBkp: Backup = {
-      id: `bkp-${Date.now()}`,
-      filename: `pgg_backup_${type.toLowerCase()}_${Date.now()}.json`,
-      date: dateStr,
-      size: `${(Math.random() * 0.8 + 0.5).toFixed(2)} MB`,
+  const addBackup = async (type: Backup['type'], user = 'Sistema') => {
+    const filename = `pgg_backup_${type.toLowerCase()}_${Date.now()}.json`;
+    const json = await api.exportBackup();
+    const saved = await api.createBackup({
+      filename,
+      size: `${new Blob([JSON.stringify(json)]).size} bytes`,
       type,
-      recordsCount: articles.length + finances.length + staff.length + assets.length,
+      recordsCount: Object.values(json).reduce((count: number, value: any) => count + (Array.isArray(value) ? value.length : 0), 0),
       createdBy: user
-    };
-    setBackups(prev => [newBkp, ...prev]);
-    addLog('Backup Executado', 'Configurações', `Gerada cópia de segurança "${newBkp.filename}"`);
-  };
-
-  const exportDatabaseJSON = (): string => {
-    const fullData = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      siteSettings,
-      carouselSlides,
-      articles,
-      videos,
-      artists,
-      departments,
-      staff,
-      schedules,
-      coverageRequests,
-      partnerships,
-      musicRequests,
-      finances,
-      assets,
-      liabilities,
-      tasks,
-      visitorPings
-    };
-    return JSON.stringify(fullData, null, 2);
-  };
-
-  const restoreFromJSON = (jsonData: string): boolean => {
-    try {
-      const parsed = JSON.parse(jsonData);
-      if (parsed.siteSettings) setSiteSettings(parsed.siteSettings);
-      if (parsed.carouselSlides) setCarouselSlides(parsed.carouselSlides);
-      if (parsed.articles) setArticles(parsed.articles);
-      if (parsed.videos) setVideos(parsed.videos);
-      if (parsed.artists) setArtists(parsed.artists);
-      if (parsed.departments) setDepartments(parsed.departments);
-      if (parsed.staff) setStaff(parsed.staff);
-      if (parsed.schedules) setSchedules(parsed.schedules);
-      if (parsed.coverageRequests) setCoverageRequests(parsed.coverageRequests);
-      if (parsed.partnerships) setPartnerships(parsed.partnerships);
-      if (parsed.musicRequests) setMusicRequests(parsed.musicRequests);
-      if (parsed.finances) setFinances(parsed.finances);
-      if (parsed.assets) setAssets(parsed.assets);
-      if (parsed.liabilities) setLiabilities(parsed.liabilities);
-      if (parsed.tasks) setTasks(parsed.tasks);
-      if (parsed.visitorPings) setVisitorPings(parsed.visitorPings);
-      addLog('Restauro de Dados', 'Configurações', 'Base de dados restaurada com sucesso a partir de ficheiro JSON');
-      return true;
-    } catch (e) {
-      console.error('Failed to restore backup:', e);
-      return false;
-    }
-  };
-
-  const resetToDefaultData = () => {
-    setSiteSettings(initialSiteSettings);
-    setCarouselSlides(initialCarouselSlides);
-    setArticles(initialArticles);
-    setVideos(initialVideos);
-    setArtists(initialArtists);
-    setDepartments(initialDepartments);
-    setStaff(initialStaff);
-    setSchedules(initialSchedules);
-    setCoverageRequests(initialCoverageRequests);
-    setPartnerships(initialPartnerships);
-    setMusicRequests(initialMusicRequests);
-    setFinances(initialFinanceEntries);
-    setAssets(initialAssets);
-    setLiabilities(initialLiabilities);
-    setTasks(initialTasks);
-    setSystemLogs(initialSystemLogs);
-    setBackups(initialBackups);
-    setVisitorPings(initialVisitorPings);
-    addLog('Reinicialização Completa', 'Configurações', 'Dados redefinidos para os valores de demonstração originais');
-  };
-
-  // Visitor Pings (Access Map & Realtime Counters)
-  const registerVisitorPing = (city: string, countryName: string, countryCode: string, lat: number, lng: number) => {
-    setVisitorPings(prev => {
-      const existing = prev.find(p => p.city.toLowerCase() === city.toLowerCase() && p.countryCode === countryCode);
-      if (existing) {
-        return prev.map(p => p.id === existing.id ? { ...p, viewsCount: p.viewsCount + 1, timestamp: new Date().toISOString().substring(0, 16).replace('T', ' ') } : p);
-      } else {
-        const newPing: VisitorPing = {
-          id: `ping-${Date.now()}`,
-          ip: '197.214.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255),
-          city,
-          countryName,
-          countryCode,
-          lat,
-          lng,
-          timestamp: new Date().toISOString().substring(0, 16).replace('T', ' '),
-          viewsCount: 1
-        };
-        return [...prev, newPing];
-      }
     });
+    setBackups(prev => [saved, ...prev]);
+  };
 
-    setSiteSettings(prev => ({
-      ...prev,
-      totalVisitorsCount: prev.totalVisitorsCount + 1
-    }));
+  const exportDatabaseJSON = async (): Promise<string> => JSON.stringify(await api.exportBackup(), null, 2);
 
-    api.recordPing({ city, countryName, countryCode, lat, lng }).catch(() => {});
+  const restoreFromJSON = async (jsonData: string): Promise<void> => {
+    const parsed: unknown = JSON.parse(jsonData);
+    await api.restoreBackup(parsed);
+    window.location.reload();
   };
 
   return (
     <DataContext.Provider
       value={{
+        dataReady,
+        dataLoadError,
+        operationError,
+        clearOperationError,
         siteSettings,
         updateSiteSettings,
         carouselSlides,
@@ -854,11 +579,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addBackup,
         restoreFromJSON,
         exportDatabaseJSON,
-        resetToDefaultData,
-        visitorPings,
-        registerVisitorPing
+        visitorPings
       }}
     >
+      {operationError && (
+        <div role="alert" className="fixed bottom-4 right-4 z-[100] max-w-lg rounded-xl border border-rose-300 bg-white p-4 text-sm text-rose-800 shadow-xl">
+          <div className="flex items-start justify-between gap-4">
+            <span>{operationError}</span>
+            <button type="button" onClick={clearOperationError} className="font-bold" aria-label="Fechar aviso">×</button>
+          </div>
+        </div>
+      )}
       {children}
     </DataContext.Provider>
   );

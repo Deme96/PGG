@@ -5,29 +5,23 @@ const API_BASE = configuredApiBase
   ? (/\/api$/i.test(configuredApiBase) ? configuredApiBase : `${configuredApiBase}/api`)
   : '/api';
 
-async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T | null> {
-  try {
-    const token = localStorage.getItem('pgg_admin_token');
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options?.headers
-      }
-    });
-
-    if (!res.ok) {
-      console.warn(`[API] HTTP error ${res.status} on ${url}`);
-      return null;
+async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('pgg_admin_token');
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers
     }
+  });
 
-    return (await res.json()) as T;
-  } catch (err) {
-    // Backend may not be running in purely static mode
-    console.debug(`[API] Offline or unreachable (${url}):`, err);
-    return null;
+  if (!res.ok) {
+    const result = await res.json().catch(() => ({}));
+    throw new Error(result.error || `Pedido à API falhou (${res.status}).`);
   }
+
+  return (await res.json()) as T;
 }
 
 export const api = {
@@ -195,25 +189,40 @@ export const api = {
 
   // Logs
   getLogs: () => fetchJSON<any[]>(`${API_BASE}/logs`),
+  createLog: (data: any) =>
+    fetchJSON<any>(`${API_BASE}/logs`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Backups
   getBackups: () => fetchJSON<any[]>(`${API_BASE}/backups`),
+  createBackup: (data: any) =>
+    fetchJSON<any>(`${API_BASE}/backups`, { method: 'POST', body: JSON.stringify(data) }),
+  exportBackup: () => fetchJSON<any>(`${API_BASE}/backups/export`),
   exportBackupUrl: `${API_BASE}/backups/export`,
   restoreBackup: (data: any) =>
     fetchJSON<any>(`${API_BASE}/backups/restore`, { method: 'POST', body: JSON.stringify(data) }),
-  resetDatabase: () =>
-    fetchJSON<any>(`${API_BASE}/backups/reset`, { method: 'POST' }),
 
   // Visitor Pings
   getPings: () => fetchJSON<any[]>(`${API_BASE}/pings`),
+  getUserBookmarks: (userId: string) => fetchJSON<{ bookmarks: any[]; articles: any[] }>(`${API_BASE}/bookmarks/user/${encodeURIComponent(userId)}`),
+  toggleBookmark: (userId: string, articleId: string) =>
+    fetchJSON<{ bookmarked: boolean; bookmark?: any }>(`${API_BASE}/bookmarks/toggle`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, articleId })
+    }),
   recordPing: (data: { city: string; countryName: string; countryCode: string; lat: number; lng: number }) =>
     fetchJSON<any>(`${API_BASE}/pings/record`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Auth
-  login: (email: string, role?: string) =>
-    fetchJSON<any>(`${API_BASE}/auth/login`, { method: 'POST', body: JSON.stringify({ email, role }) }),
-  register: (name: string, email: string, role?: string) =>
-    fetchJSON<any>(`${API_BASE}/auth/register`, { method: 'POST', body: JSON.stringify({ name, email, role }) }),
+  login: (email: string, password: string) =>
+    fetchJSON<{ user: User }>(`${API_BASE}/auth/community/login`, {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    }),
+  register: (name: string, email: string, password: string, role?: string) =>
+    fetchJSON<{ user: User }>(`${API_BASE}/auth/community/register`, {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password, role })
+    }),
   loginAdmin: async (email: string, password: string): Promise<{ user: User; token: string }> => {
     let response: Response;
     try {

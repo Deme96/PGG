@@ -11,6 +11,10 @@ interface AdminSession {
   expiresAt: number;
 }
 
+export type AdminLoginResult =
+  | { error: string; status: 401 | 503 }
+  | { user: User; token: string };
+
 const sessions = new Map<string, AdminSession>();
 
 export function isRootAdmin(user: Pick<User, 'email' | 'role'> | null | undefined): boolean {
@@ -36,7 +40,7 @@ export function createPasswordCredentials(password: string): { passwordHash: str
   return { passwordHash, passwordSalt };
 }
 
-function userPasswordMatches(user: StoredUser, provided: string): boolean {
+export function userPasswordMatches(user: StoredUser, provided: string): boolean {
   if (!user.passwordHash || !user.passwordSalt) return false;
   const expected = Buffer.from(user.passwordHash, 'hex');
   if (expected.length !== 64) return false;
@@ -44,15 +48,15 @@ function userPasswordMatches(user: StoredUser, provided: string): boolean {
   return timingSafeEqual(actual, expected);
 }
 
-export function createAdminSession(email: unknown, password: unknown) {
+export async function createAdminSession(email: unknown, password: unknown): Promise<AdminLoginResult> {
   if (typeof email !== 'string' || typeof password !== 'string') {
-    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 as const };
+    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const user = db.getCollection('users').find(candidate => candidate.email.toLowerCase() === normalizedEmail);
+  const user = await db.findUserByEmail<StoredUser>(normalizedEmail);
   if (!user || user.isActive === false) {
-    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 as const };
+    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
   }
 
   if (isRootAdmin(user)) {
@@ -64,10 +68,10 @@ export function createAdminSession(email: unknown, password: unknown) {
       };
     }
     if (!passwordsMatch(password, configuredPassword)) {
-      return { error: 'E-mail ou palavra-passe inválidos.', status: 401 as const };
+      return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
     }
-  } else if (!Array.isArray(user.adminPermissions) || !userPasswordMatches(user, password)) {
-    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 as const };
+  } else if (!Array.isArray(user.adminPermissions) || !user.adminPermissions.length || !userPasswordMatches(user, password)) {
+    return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
   }
 
   const token = randomBytes(32).toString('hex');
@@ -75,7 +79,7 @@ export function createAdminSession(email: unknown, password: unknown) {
   return { user: sanitizeUser(user), token };
 }
 
-export function getAdminSession(token: string | undefined) {
+export async function getAdminSession(token: string | undefined) {
   if (!token) return null;
   const session = sessions.get(token);
   if (!session) return null;
@@ -84,8 +88,11 @@ export function getAdminSession(token: string | undefined) {
     return null;
   }
 
-  const user = db.getCollection('users').find(candidate => candidate.id === session.userId);
-  if (!user || user.isActive === false || (!isRootAdmin(user) && !Array.isArray(user.adminPermissions))) {
+  const user = await db.findById<StoredUser>('users', session.userId);
+  if (!user || user.isActive === false || (
+    !isRootAdmin(user) &&
+    (!Array.isArray(user.adminPermissions) || !user.adminPermissions.length)
+  )) {
     sessions.delete(token);
     return null;
   }

@@ -15,9 +15,12 @@ PGG/
 │   └── src/
 ├── Backend/                      # API Express, autenticação e persistência
 │   ├── src/
-│   └── data/db.json
+│   ├── database/postgres_schema.sql
+│   └── data/db.json              # origem preservada para a primeira migração
 └── package.json                  # Workspaces e comandos para os dois serviços
 ```
+
+As instruções e scripts atuais usam exclusivamente `Backend/`; a antiga pasta `server/` fica preservada como arquivo e não participa da execução nem da migração.
 
 ---
 
@@ -51,11 +54,11 @@ O backend expõe endpoints completos com respostas em JSON:
 | **Auditoria** | `GET` | `/api/logs` | Logs de sistema com IP, data e módulo |
 | **Backups** | `GET` | `/api/backups/export` | Descarregar snapshot JSON completo |
 | | `POST` | `/api/backups/restore` | Restaurar base de dados via JSON |
-| | `POST` | `/api/backups/reset` | Repor valores padrão de demonstração |
 | **Acessos** | `GET`, `POST` | `/api/pings` | Registo e geolocalização de visitas |
 | **Autenticação** | `POST` | `/api/auth/login` | Sessão administrativa validada pelo backend |
 | | `GET` | `/api/auth/session` | Validação da sessão administrativa |
 | | `POST` | `/api/auth/logout` | Terminar sessão administrativa |
+| | `POST` | `/api/auth/community/login`, `/api/auth/community/register` | Acesso de membros com credenciais guardadas no PostgreSQL |
 | **Utilizadores** | `GET`, `POST` | `/api/auth/users` | Listar e criar contas de gestão (administrador principal) |
 | | `PUT`, `DELETE` | `/api/auth/users/:id` | Personalizar, desativar ou remover contas de gestão |
 
@@ -108,15 +111,16 @@ Configure a palavra-passe administrativa no ambiente do backend antes de iniciar
 
 ```powershell
 $env:PGG_ADMIN_PASSWORD = "uma-palavra-passe-forte"
+$env:DATABASE_URL = "URL_PRIVADA_DO_POSTGRES"
 npm run dev:all
 ```
 
 O acesso de administrador utiliza o e-mail `admin@portalgospel.gw`. Não existe palavra-passe padrão; a API rejeita o login até que `PGG_ADMIN_PASSWORD` esteja configurada.
-Para desenvolvimento local, copie `.env.example` para `.env`, defina uma palavra-passe própria em `PGG_ADMIN_PASSWORD` e reinicie o backend. O `.env` é ignorado pelo Git e não existe palavra-passe padrão.
+`DATABASE_URL` é obrigatória: sem ligação e esquema PostgreSQL válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env`, configure a URL e uma palavra-passe própria em `PGG_ADMIN_PASSWORD` e reinicie o backend. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
 
 ### Deploy do backend no Render
 
-O ficheiro `render.yaml` configura o serviço web `pgg-api` e solicita `PGG_ADMIN_PASSWORD` como variável secreta durante a criação do Blueprint. Defina uma palavra-passe forte no painel do Render; o valor não deve ser guardado no repositório nem enviado como ficheiro `.env`. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+O ficheiro `render.yaml` configura o serviço web `pgg-api` e solicita `DATABASE_URL` e `PGG_ADMIN_PASSWORD` como variáveis secretas durante a criação do Blueprint. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db` (ou com a URL apropriada ao local de execução) e defina uma palavra-passe forte para o administrador. Não guarde estes valores no repositório nem os envie por chat. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
 Para o **Static Site** do frontend, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. Configure `VITE_API_URL` com a URL pública do backend (por exemplo, `https://pgg-api.onrender.com/api`). Essa variável é incorporada ao bundle durante o build; não coloque nela a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
@@ -138,12 +142,23 @@ npm run build
 ```
 O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulos otimizados.
 
-## Esquema PostgreSQL
+## PostgreSQL e migração inicial
 
-O script `Backend/database/postgres_schema.sql` cria as tabelas, restrições e índices para as entidades do portal. Execute-o num banco PostgreSQL com:
+O backend e o frontend usam a API ligada ao PostgreSQL; os dados de conteúdo e gestão não têm fallback para JSON, mocks ou `localStorage`. Preferências de apresentação e o token de sessão administrativa continuam no armazenamento local do browser. O ficheiro `Backend/data/db.json` permanece intacto como origem da importação.
+
+1. Configure `DATABASE_URL` para o banco `pgg_db`.
+2. Crie as tabelas e índices no banco, uma única vez:
 
 ```bash
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f Backend/database/postgres_schema.sql
 ```
 
-Este script cria somente o esquema; não importa os dados atuais nem altera o backend, que continua a usar `Backend/data/db.json`.
+3. Execute a migração **uma única vez** num ambiente com acesso a `DATABASE_URL` e ao repositório:
+
+```bash
+npm run migrate:postgres
+```
+
+O comando importa as coleções, os IDs e os dados atuais em uma transação. Só prossegue se todas as tabelas estiverem vazias; se o banco já contiver registos, interrompe sem os sobrescrever. Em caso de erro, a transação inteira é revertida e o JSON original não é apagado. Para Render, pode executar o comando no Shell do serviço API após configurar a URL e concluir o deploy.
+
+Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.

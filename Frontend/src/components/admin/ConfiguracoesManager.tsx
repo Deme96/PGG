@@ -15,7 +15,6 @@ import {
   Sliders,
   Download,
   Upload,
-  RefreshCw,
   Plus,
   Eye,
   CheckCircle,
@@ -48,8 +47,7 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
     backups,
     addBackup,
     restoreFromJSON,
-    exportDatabaseJSON,
-    resetToDefaultData
+    exportDatabaseJSON
   } = useData();
   const { t, getLocalized } = useLanguage();
 
@@ -321,16 +319,20 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
   };
 
   // =================== BACKUP HANDLERS ===================
-  const handleDownloadFullBackup = () => {
-    const jsonStr = exportDatabaseJSON();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pgg_backup_completo_${new Date().toISOString().substring(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    addBackup('Completo');
+  const handleDownloadFullBackup = async () => {
+    try {
+      const jsonStr = await exportDatabaseJSON();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pgg_backup_completo_${new Date().toISOString().substring(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      await addBackup('Completo');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Não foi possível descarregar o backup.');
+    }
   };
 
   const handleFileRestoreUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,14 +340,14 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = evt => {
+    reader.onload = async evt => {
       const content = evt.target?.result as string;
       if (content) {
-        const success = restoreFromJSON(content);
-        if (success) {
+        try {
+          await restoreFromJSON(content);
           alert('Base de dados restaurada com sucesso!');
-        } else {
-          alert('Erro ao carregar o ficheiro de cópia de segurança.');
+        } catch (error) {
+          alert(error instanceof Error ? error.message : 'Erro ao carregar o ficheiro de cópia de segurança.');
         }
       }
     };
@@ -676,7 +678,7 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
       {/* Submenu 5: Backup e Restauro */}
       {currentSubmenu === 'backup' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Download snapshot */}
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-navy-100 flex flex-col justify-between">
               <div>
@@ -726,30 +728,6 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
               </div>
             </div>
 
-            {/* Reset to initial realistic demo */}
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-navy-100 flex flex-col justify-between">
-              <div>
-                <RefreshCw className="w-8 h-8 text-rose-600 mb-3" />
-                <h4 className="font-heading font-bold text-base text-[#14243B]">
-                  Repor Dados de Demonstração
-                </h4>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Restaura o conjunto inicial e realista de notícias, vídeos, finanças e escalas em português da Guiné-Bissau.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  if (confirm('Tem a certeza que deseja repor todos os dados para a demonstração inicial?')) {
-                    resetToDefaultData();
-                    alert('Dados restaurados para os valores padrão de demonstração.');
-                  }
-                }}
-                className="mt-4 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center gap-2 border border-rose-200"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Restaurar Dados Iniciais</span>
-              </button>
-            </div>
           </div>
 
           {/* Backups History Table */}

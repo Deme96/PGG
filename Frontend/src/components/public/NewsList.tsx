@@ -59,7 +59,9 @@ export const NewsList: React.FC<NewsListProps> = ({
       alert('Por favor inicie sessão para guardar artigos na sua Zona do Seguidor.');
       return;
     }
-    toggleBookmark(currentUser.id, artId);
+    void toggleBookmark(currentUser.id, artId).catch(error => {
+      alert(error instanceof Error ? error.message : 'Não foi possível guardar o artigo.');
+    });
   };
 
   const handleShare = (e: React.MouseEvent, art: Article) => {
