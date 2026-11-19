@@ -162,7 +162,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToPublic }) => {
       id: 'settings',
       label: 'Configurações',
       icon: Settings,
-      hasSubmenus: true,
+      hasSubmenus: false,
       defaultSub: 'sistema',
       submenus: [
         { id: 'sistema', label: 'Dados do Sistema', icon: Settings },
@@ -210,20 +210,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToPublic }) => {
 
               if (!item.hasSubmenus) {
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    onClick={() => handleSelectMenu(item.id)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      isSelected
-                        ? 'bg-[#C9A44C] text-[#14243B] shadow-md font-extrabold'
-                        : 'text-slate-300 hover:text-white hover:bg-white/5'
-                    }`}
+                    className={item.id === 'settings' ? 'mt-4 border-t border-white/10 pt-4' : ''}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4 h-4 ${isSelected ? 'text-[#14243B]' : 'text-[#C9A44C]'}`} />
-                      <span>{item.label}</span>
-                    </div>
-                  </button>
+                    <button
+                      onClick={() => handleSelectMenu(item.id, item.defaultSub)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                        isSelected
+                          ? 'bg-[#C9A44C] text-[#14243B] shadow-md font-extrabold'
+                          : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className={`w-4 h-4 ${isSelected ? 'text-[#14243B]' : 'text-[#C9A44C]'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                    </button>
+                  </div>
                 );
               }
 
@@ -431,9 +435,41 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToPublic }) => {
           )}
 
           {activeMenu === 'settings' && (
-            <ConfiguracoesManager
-              currentSubmenu={activeSubmenu || 'sistema'}
-            />
+            <>
+              <nav
+                aria-label="Secções de configurações"
+                className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft"
+              >
+                {menuStructure.find(item => item.id === 'settings')?.submenus?.map(sub => {
+                  const SubIcon = sub.icon;
+                  const isSelected = (activeSubmenu || 'sistema') === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => setActiveSubmenu(sub.id)}
+                      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                        isSelected
+                          ? 'bg-[#14243B] text-white shadow-sm'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-[#14243B]'
+                      }`}
+                    >
+                      <SubIcon className={`h-4 w-4 ${isSelected ? 'text-[#C9A44C]' : 'text-slate-500'}`} />
+                      <span>{sub.label}</span>
+                      {sub.badge ? (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+                          {sub.badge}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </nav>
+              <ConfiguracoesManager
+                currentSubmenu={activeSubmenu || 'sistema'}
+              />
+            </>
           )}
         </div>
       </main>
