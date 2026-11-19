@@ -160,7 +160,7 @@ export class Database {
 
     const settings = await pool.query('SELECT 1 FROM site_settings WHERE id = 1');
     if (requireImportedData && !settings.rowCount) {
-      throw new Error('O PostgreSQL está vazio. Execute npm run migrate:postgres para importar Backend/data/db.json.');
+      throw new Error('Os dados iniciais do portal não foram importados (site_settings id = 1 ausente). Execute npm run migrate:postgres para importar Backend/data/db.json.');
     }
   }
 

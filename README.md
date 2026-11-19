@@ -161,4 +161,6 @@ npm run migrate:postgres
 
 O comando importa as coleções, os IDs e os dados atuais em uma transação. Só prossegue se todas as tabelas estiverem vazias; se o banco já contiver registos, interrompe sem os sobrescrever. Em caso de erro, a transação inteira é revertida e o JSON original não é apagado. Para Render, pode executar o comando no Shell do serviço API após configurar a URL e concluir o deploy.
 
+Se os logs do Render indicarem `site_settings` ausente, execute `npm run migrate:postgres` uma única vez no Shell do serviço API; não adicione esse comando ao Build ou ao Pre-Deploy, pois ele não deve ser repetido após a importação. O script SQL opcional de criação do administrador não substitui esta migração e não deve ser executado antes dela.
+
 Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.
