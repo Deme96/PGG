@@ -38,6 +38,7 @@ export default {
       fontFamily: {
         cinzel: ['Aptos Body', 'Aptos', 'Segoe UI', 'sans-serif'],
         sans: ['Aptos Body', 'Aptos', 'Segoe UI', 'sans-serif'],
+        mono: ['Aptos Body', 'Aptos', 'Segoe UI', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 4px 20px -2px rgba(20, 36, 59, 0.06), 0 2px 6px -1px rgba(20, 36, 59, 0.04)',

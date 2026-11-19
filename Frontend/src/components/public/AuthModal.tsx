@@ -80,7 +80,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   PORTAL GOSPEL
                 </h2>
                 <p className="text-[10px] text-[#C9A44C] uppercase tracking-widest font-semibold">
-                  Guiné-Bissau
+                  evangelho kana para
                 </p>
               </div>
             </div>

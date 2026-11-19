@@ -196,7 +196,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToPublic }) => {
                 ÁREA DE GESTÃO
               </h2>
               <p className="text-[10px] text-[#C9A44C] font-semibold tracking-wider uppercase">
-                Redação Central
+                evangelho kana para
               </p>
             </div>
           </div>

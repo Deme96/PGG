@@ -158,6 +158,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenA
               <span className="mt-0.5 block whitespace-nowrap text-sm sm:text-base lg:text-lg">
                 {brandLastWord}
               </span>
+              <span className="mt-1 block whitespace-nowrap font-sans text-[8px] font-semibold tracking-widest text-[#C9A44C] sm:text-[9px]">
+                evangelho kana para
+              </span>
             </div>
           </button>
 

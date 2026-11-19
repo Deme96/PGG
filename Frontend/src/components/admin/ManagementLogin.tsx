@@ -45,7 +45,7 @@ export const ManagementLogin: React.FC<ManagementLoginProps> = ({ onBack, onSucc
               </div>
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.18em]">Portal Gospel</p>
-                <p className="text-xs tracking-[0.2em] text-[#E2C477]">GUINÉ-BISSAU</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#E2C477]">evangelho kana para</p>
               </div>
             </div>
 
