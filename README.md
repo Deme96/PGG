@@ -118,11 +118,11 @@ Remove-Item Env:PGG_ADMIN_BOOTSTRAP_PASSWORD
 npm run dev:all
 ```
 
-`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve somente para criar/definir uma vez o hash da conta principal; remova-a do ambiente depois. O login usa o hash persistido no PostgreSQL, não uma variável de ambiente. `DATABASE_URL` é obrigatória e deve apontar para `pgg_db`; sem ligação, esquema e dados importados válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env` e configure a URL. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
+`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve somente para criar/definir uma vez o hash da conta principal; remova-a do ambiente depois. O login usa o hash persistido no PostgreSQL, não uma variável de ambiente. `DATABASE_URL` é obrigatória e deve ser a URL interna do banco Render que deseja usar; use o nome real indicado pelo Render, que pode incluir um sufixo. Sem ligação, esquema e dados importados válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env` e configure a URL. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
 
 ### Deploy do backend no Render
 
-O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend usa `VITE_API_URL` para chamar a API no backend; o valor de produção está em `Frontend/.env.production` e deve ser atualizado se o endereço público da API mudar. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db`. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend usa `VITE_API_URL` para chamar a API no backend; o valor de produção está em `Frontend/.env.production` e deve ser atualizado se o endereço público da API mudar. Configure `DATABASE_URL` com a **Internal Database URL** do banco PostgreSQL correto no Render. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
 Após criar o esquema e importar `Backend/data/db.json` uma única vez, defina temporariamente `PGG_ADMIN_BOOTSTRAP_PASSWORD` no serviço API e execute `npm run admin:bootstrap` no Shell. Remova a variável do ambiente depois da execução. O acesso principal é `admin@portalgospel.gw` com a palavra-passe escolhida; não coloque a palavra-passe em SQL nem a envie por chat.
 
@@ -150,7 +150,7 @@ O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulo
 
 O backend e o frontend usam a API ligada ao PostgreSQL; os dados de conteúdo e gestão não têm fallback para JSON, mocks ou `localStorage`. Preferências de apresentação e o token de sessão administrativa continuam no armazenamento local do browser. O ficheiro `Backend/data/db.json` permanece intacto como origem da importação.
 
-1. Configure `DATABASE_URL` para o banco `pgg_db`.
+1. Configure `DATABASE_URL` com a URL interna do banco PostgreSQL que o serviço deve utilizar.
 2. Crie as tabelas e índices no banco, uma única vez:
 
 ```bash
