@@ -50,7 +50,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ language, setLangua
   }, [isOpen]);
 
   return (
-    <div ref={menuRef} className={`relative ${fullWidth ? 'w-full' : ''}`}>
+    <div ref={menuRef} className={`menu-font relative ${fullWidth ? 'w-full' : ''}`}>
       <button
         type="button"
         aria-haspopup="menu"
@@ -162,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenA
           </button>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:ml-6 xl:flex items-center gap-0.5">
+          <nav className="menu-font hidden xl:ml-6 xl:flex items-center gap-0.5">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
@@ -232,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenA
 
                 {/* Dropdown Menu */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-card border border-slate-200 py-1.5 text-slate-800 z-50 text-xs">
+                  <div className="menu-font absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-card border border-slate-200 py-1.5 text-slate-800 z-50 text-xs">
                     <div className="px-3.5 py-2 border-b border-slate-100">
                       <p className="font-bold text-slate-900">{currentUser?.name}</p>
                       <p className="text-slate-500 text-[11px] truncate">{currentUser?.email}</p>
@@ -295,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenA
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-[#0D1929] border-t border-[#C9A44C]/20 px-4 pt-3 pb-6 space-y-1">
+        <div className="menu-font xl:hidden bg-[#0D1929] border-t border-[#C9A44C]/20 px-4 pt-3 pb-6 space-y-1">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentView === item.id;

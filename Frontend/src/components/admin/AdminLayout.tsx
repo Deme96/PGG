@@ -202,7 +202,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToPublic }) => {
           </div>
 
           {/* Navigation Accordion List */}
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="menu-font min-h-0 flex-1 overflow-y-auto p-3">
             {accessibleMenuStructure.map(item => {
               const Icon = item.icon;
               const isSelected = activeMenu === item.id;

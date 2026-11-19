@@ -57,8 +57,11 @@ export function createAdminSession(email: unknown, password: unknown) {
 
   if (isRootAdmin(user)) {
     const configuredPassword = process.env.PGG_ADMIN_PASSWORD;
-    if (!configuredPassword) {
-      return { error: 'O acesso de administrador ainda não foi configurado no servidor.', status: 503 as const };
+    if (!configuredPassword || configuredPassword === 'replace-with-a-strong-password') {
+      return {
+        error: 'Configure uma palavra-passe própria em PGG_ADMIN_PASSWORD no ambiente do backend.',
+        status: 503 as const
+      };
     }
     if (!passwordsMatch(password, configuredPassword)) {
       return { error: 'E-mail ou palavra-passe inválidos.', status: 401 as const };

@@ -112,7 +112,7 @@ npm run dev:all
 ```
 
 O acesso de administrador utiliza o e-mail `admin@portalgospel.gw`. Não existe palavra-passe padrão; a API rejeita o login até que `PGG_ADMIN_PASSWORD` esteja configurada.
-Para desenvolvimento local, copie `.env.example` para `.env` e substitua o valor de exemplo por uma palavra-passe forte. O `.env` é ignorado pelo Git.
+Para desenvolvimento local, copie `.env.example` para `.env`, defina uma palavra-passe própria em `PGG_ADMIN_PASSWORD` e reinicie o backend. O `.env` é ignorado pelo Git e não existe palavra-passe padrão.
 
 ### Deploy do backend no Render
 
@@ -137,3 +137,13 @@ npm run dev
 npm run build
 ```
 O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulos otimizados.
+
+## Esquema PostgreSQL
+
+O script `Backend/database/postgres_schema.sql` cria as tabelas, restrições e índices para as entidades do portal. Execute-o num banco PostgreSQL com:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f Backend/database/postgres_schema.sql
+```
+
+Este script cria somente o esquema; não importa os dados atuais nem altera o backend, que continua a usar `Backend/data/db.json`.
