@@ -108,26 +108,3 @@ async function startServer() {
 }
 
 void startServer();
-
-==============================================
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT NOW() AS data_hora'
-    );
-
-    res.json({
-      success: true,
-      message: 'PostgreSQL conectado!',
-      data: result.rows
-    });
-
-  } catch (error) {
-    console.error('Erro PostgreSQL:', error.message);
-
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
