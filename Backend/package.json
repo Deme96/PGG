@@ -7,7 +7,8 @@
     "dev": "tsx src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc",
-    "migrate:postgres": "tsx scripts/migrateToPostgres.ts"
+    "migrate:postgres": "tsx scripts/migrateToPostgres.ts",
+    "admin:bootstrap": "tsx scripts/bootstrapRootAdmin.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

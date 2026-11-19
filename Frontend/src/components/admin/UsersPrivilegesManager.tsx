@@ -302,7 +302,7 @@ export const UsersPrivilegesManager: React.FC = () => {
             {editingUser && isRootAdmin(editingUser) ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>A conta principal mantém acesso total. A palavra-passe continua a ser gerida por `PGG_ADMIN_PASSWORD` no servidor.</p>
+                <p>A conta principal mantém acesso total. A palavra-passe é validada pelo hash armazenado no PostgreSQL.</p>
               </div>
             ) : (
               <fieldset className="space-y-2 rounded-xl border border-slate-200 p-4">

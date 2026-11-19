@@ -95,7 +95,7 @@ Os ficheiros enviados são guardados em `Backend/uploads/` com nomes gerados pel
 - **Configurações:** Dados do sistema, Notícias, Vídeos, Logs, Backup e Carrossel.
 - **Utilizadores e Privilégios:** gestão de contas individuais, estado da conta e permissões por área, disponível ao administrador principal.
 
-As contas de gestão adicionais usam e-mail e palavra-passe próprios. O administrador principal cria e personaliza estas contas; as palavras-passe são armazenadas com hash scrypt e as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as sessões ativas da conta. A conta principal `admin@portalgospel.gw` mantém acesso total e continua a usar `PGG_ADMIN_PASSWORD`.
+As contas de gestão usam e-mail e palavra-passe próprios, armazenados com hash scrypt no PostgreSQL; as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as sessões ativas da conta. A conta principal `admin@portalgospel.gw` mantém acesso total e também autentica pelo hash armazenado em `users`.
 
 ---
 
@@ -110,17 +110,21 @@ npm run dev:all
 Configure a palavra-passe administrativa no ambiente do backend antes de iniciar os serviços:
 
 ```powershell
-$env:PGG_ADMIN_PASSWORD = "uma-palavra-passe-forte"
 $env:DATABASE_URL = "URL_PRIVADA_DO_POSTGRES"
+npm run migrate:postgres
+$env:PGG_ADMIN_BOOTSTRAP_PASSWORD = "uma-palavra-passe-forte"
+npm run admin:bootstrap
+Remove-Item Env:PGG_ADMIN_BOOTSTRAP_PASSWORD
 npm run dev:all
 ```
 
-O acesso de administrador utiliza o e-mail `admin@portalgospel.gw`. Não existe palavra-passe padrão; a API rejeita o login até que `PGG_ADMIN_PASSWORD` esteja configurada.
-`DATABASE_URL` é obrigatória: sem ligação e esquema PostgreSQL válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env`, configure a URL e uma palavra-passe própria em `PGG_ADMIN_PASSWORD` e reinicie o backend. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
+`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve somente para criar/definir uma vez o hash da conta principal; remova-a do ambiente depois. O login usa o hash persistido no PostgreSQL, não uma variável de ambiente. `DATABASE_URL` é obrigatória e deve apontar para `pgg_db`; sem ligação, esquema e dados importados válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env` e configure a URL. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
 
 ### Deploy do backend no Render
 
-O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend usa `VITE_API_URL` para chamar a API no backend; o valor de produção está em `Frontend/.env.production` e deve ser atualizado se o endereço público da API mudar. O Blueprint solicita `DATABASE_URL` e `PGG_ADMIN_PASSWORD` como variáveis secretas durante a criação. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db` (ou com a URL apropriada ao local de execução) e defina uma palavra-passe forte para o administrador. Não guarde estes valores no repositório nem os envie por chat. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend usa `VITE_API_URL` para chamar a API no backend; o valor de produção está em `Frontend/.env.production` e deve ser atualizado se o endereço público da API mudar. Configure `DATABASE_URL` com a **Internal Database URL** do banco Render `pgg_db`. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+
+Após criar o esquema e importar `Backend/data/db.json` uma única vez, defina temporariamente `PGG_ADMIN_BOOTSTRAP_PASSWORD` no serviço API e execute `npm run admin:bootstrap` no Shell. Remova a variável do ambiente depois da execução. O acesso principal é `admin@portalgospel.gw` com a palavra-passe escolhida; não coloque a palavra-passe em SQL nem a envie por chat.
 
 Para um deploy manual do Static Site, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. `Frontend/.env.production` fornece o `VITE_API_URL`; uma variável de ambiente definida no Render pode substituí-lo. O endereço é incorporado ao bundle durante o build, então faça novo deploy após alterá-lo. Não coloque nele a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 

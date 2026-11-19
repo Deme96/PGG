@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { db } from '../db/database.ts';
 import type { User } from '../types/index.ts';
 
@@ -12,7 +12,7 @@ interface AdminSession {
 }
 
 export type AdminLoginResult =
-  | { error: string; status: 401 | 503 }
+  | { error: string; status: 401 }
   | { user: User; token: string };
 
 const sessions = new Map<string, AdminSession>();
@@ -26,12 +26,6 @@ export function sanitizeUser(user: StoredUser): User {
   delete publicUser.passwordHash;
   delete publicUser.passwordSalt;
   return publicUser;
-}
-
-function passwordsMatch(provided: string, expected: string): boolean {
-  const providedDigest = createHash('sha256').update(provided).digest();
-  const expectedDigest = createHash('sha256').update(expected).digest();
-  return timingSafeEqual(providedDigest, expectedDigest);
 }
 
 export function createPasswordCredentials(password: string): { passwordHash: string; passwordSalt: string } {
@@ -59,18 +53,10 @@ export async function createAdminSession(email: unknown, password: unknown): Pro
     return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
   }
 
-  if (isRootAdmin(user)) {
-    const configuredPassword = process.env.PGG_ADMIN_PASSWORD;
-    if (!configuredPassword || configuredPassword === 'replace-with-a-strong-password') {
-      return {
-        error: 'Configure uma palavra-passe própria em PGG_ADMIN_PASSWORD no ambiente do backend.',
-        status: 503 as const
-      };
-    }
-    if (!passwordsMatch(password, configuredPassword)) {
-      return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
-    }
-  } else if (!Array.isArray(user.adminPermissions) || !user.adminPermissions.length || !userPasswordMatches(user, password)) {
+  if (!userPasswordMatches(user, password) || (
+    !isRootAdmin(user) &&
+    (!Array.isArray(user.adminPermissions) || !user.adminPermissions.length)
+  )) {
     return { error: 'E-mail ou palavra-passe inválidos.', status: 401 };
   }
 

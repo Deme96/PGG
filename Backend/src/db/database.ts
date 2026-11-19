@@ -139,7 +139,11 @@ export class Database {
       throw new Error('DATABASE_URL não está configurada. O backend requer a ligação PostgreSQL.');
     }
 
-    await pool.query('SELECT 1');
+    const database = await pool.query<{ database_name: string }>('SELECT current_database() AS database_name');
+    if (database.rows[0]?.database_name.toLowerCase() !== 'pgg_db') {
+      throw new Error(`DATABASE_URL deve apontar para pgg_db (base atual: ${database.rows[0]?.database_name || 'desconhecida'}).`);
+    }
+
     const tableNames = [...new Set([...Object.values(collectionTables), 'site_settings'])];
     const result = await pool.query<{ table_name: string; column_name: string }>(
       `SELECT table_name, column_name
