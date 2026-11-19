@@ -247,7 +247,7 @@ export const api = {
   getAdminUsers: () => fetchJSON<User[]>(`${API_BASE}/auth/users`),
   createAdminUser: (data: Omit<User, 'id'> & { password: string }) =>
     fetchJSON<User>(`${API_BASE}/auth/users`, { method: 'POST', body: JSON.stringify(data) }),
-  updateAdminUser: (id: string, data: Partial<User> & { password?: string }) =>
+  updateAdminUser: (id: string, data: Partial<User> & { password?: string; currentPassword?: string }) =>
     fetchJSON<User>(`${API_BASE}/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAdminUser: (id: string) =>
     fetchJSON<{ message: string }>(`${API_BASE}/auth/users/${id}`, { method: 'DELETE' })

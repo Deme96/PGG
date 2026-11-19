@@ -745,17 +745,22 @@ apiRouter.put('/auth/users/:id', async (req: Request, res: Response) => {
   const existingUser = await db.findById<StoredUser>('users', userId);
   if (!existingUser) return res.status(404).json({ error: 'Utilizador não encontrado.' });
 
-  const { name, email, role, phone, avatar, twoFactorEnabled, isActive, password } = req.body || {};
+  const { name, email, role, phone, avatar, twoFactorEnabled, isActive, password, currentPassword } = req.body || {};
   const isRootAccount = isRootAdmin(existingUser);
   if (isRootAccount) {
     if (
       email?.trim().toLowerCase() !== ROOT_ADMIN_EMAIL ||
       role !== 'admin' ||
       isActive === false ||
-      password ||
       req.body?.adminPermissions !== undefined
     ) {
       return res.status(403).json({ error: 'A conta principal e os seus privilégios não podem ser alterados.' });
+    }
+    if (password !== undefined && password !== '' && (typeof password !== 'string' || password.length < 12 || password.length > 128)) {
+      return res.status(400).json({ error: 'A palavra-passe deve ter entre 12 e 128 caracteres.' });
+    }
+    if (password && (typeof currentPassword !== 'string' || !userPasswordMatches(existingUser, currentPassword))) {
+      return res.status(401).json({ error: 'A palavra-passe atual está incorreta.' });
     }
     if (
       typeof name !== 'string' || !name.trim() || name.trim().length > 120 ||
@@ -765,12 +770,18 @@ apiRouter.put('/auth/users/:id', async (req: Request, res: Response) => {
     ) {
       return res.status(400).json({ error: 'Verifique os dados do utilizador.' });
     }
+    const credentials = password ? createPasswordCredentials(password) : {};
     const updatedRoot = await db.update<StoredUser>('users', existingUser.id, {
       name: name.trim(),
       phone: phone?.trim() || undefined,
       avatar: avatar || undefined,
-      twoFactorEnabled: twoFactorEnabled ?? existingUser.twoFactorEnabled
+      twoFactorEnabled: twoFactorEnabled ?? existingUser.twoFactorEnabled,
+      ...credentials
     });
+    if (password) {
+      revokeUserSessions(existingUser.id, getBearerToken(req.header('authorization')));
+      await db.addLog('Alteração da palavra-passe principal', 'Configurações', 'Palavra-passe da conta principal atualizada', currentUser.name);
+    }
     return res.json(sanitizeUser(updatedRoot || existingUser));
   }
 

@@ -94,7 +94,7 @@ Os ficheiros enviados são guardados em `Backend/uploads/` com nomes gerados pel
 - **Configurações:** Dados do sistema, Notícias, Vídeos, Logs, Backup e Carrossel.
 - **Utilizadores e Privilégios:** gestão de contas individuais, estado da conta e permissões por área, disponível ao administrador principal.
 
-As contas de gestão usam e-mail e palavra-passe próprios, armazenados com hash scrypt em `Backend/data/db.json`; as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as sessões ativas da conta. O ficheiro inclui as contas `admin@portalgospel.gw` (acesso total), `redacao@portalgospel.gw` (configurações/conteúdo), `artista@portalgospel.gw` (correspondências) e `seguidor@portalgospel.gw` (sem acesso administrativo). Não há palavras-passe padrão: o administrador principal deve definir as credenciais das outras contas na gestão de utilizadores.
+As contas de gestão usam e-mail e palavra-passe próprios, armazenados com hash scrypt em `Backend/data/db.json`; as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as outras sessões ativas da conta. O ficheiro inclui as contas `admin@portalgospel.gw` (acesso total), `redacao@portalgospel.gw` (configurações/conteúdo), `artista@portalgospel.gw` (correspondências) e `seguidor@portalgospel.gw` (sem acesso administrativo). Não há palavras-passe padrão: o administrador principal deve definir as credenciais das outras contas na gestão de utilizadores.
 
 ---
 
@@ -136,6 +136,6 @@ O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulo
 
 ## Armazenamento e autenticação
 
-O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. As restantes contas podem receber ou alterar palavras-passe pela área **Utilizadores e Privilégios**. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
+O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. O administrador principal pode alterar a própria palavra-passe pela área **Utilizadores e Privilégios**, informando a atual e escolhendo uma nova com 12 a 128 caracteres; as restantes contas podem receber ou alterar palavras-passe nessa área. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
 
 Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.

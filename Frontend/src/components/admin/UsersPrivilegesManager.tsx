@@ -36,6 +36,7 @@ export const UsersPrivilegesManager: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState('');
   const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [selectedPermissions, setSelectedPermissions] = useState<AdminPermission[]>([]);
 
@@ -62,6 +63,7 @@ export const UsersPrivilegesManager: React.FC = () => {
     setPhone('');
     setAvatar('');
     setPassword('');
+    setCurrentPassword('');
     setIsActive(true);
     setSelectedPermissions([]);
     setErrorMessage('');
@@ -81,6 +83,7 @@ export const UsersPrivilegesManager: React.FC = () => {
     setPhone(user.phone || '');
     setAvatar(user.avatar || '');
     setPassword('');
+    setCurrentPassword('');
     setIsActive(user.isActive !== false);
     setSelectedPermissions(user.adminPermissions || []);
     setErrorMessage('');
@@ -93,12 +96,16 @@ export const UsersPrivilegesManager: React.FC = () => {
       setErrorMessage('Preencha o nome e o e-mail do utilizador.');
       return;
     }
+    const rootAccount = editingUser ? isRootAdmin(editingUser) : false;
     if (!editingUser && password.length < 12) {
       setErrorMessage('Defina uma palavra-passe inicial com pelo menos 12 caracteres.');
       return;
     }
+    if (rootAccount && password && currentPassword.length === 0) {
+      setErrorMessage('Informe a palavra-passe atual para alterar a conta principal.');
+      return;
+    }
 
-    const rootAccount = editingUser ? isRootAdmin(editingUser) : false;
     const userData: Omit<User, 'id'> = {
       name: name.trim(),
       email: email.trim(),
@@ -114,7 +121,10 @@ export const UsersPrivilegesManager: React.FC = () => {
     setErrorMessage('');
     try {
       const savedUser = editingUser
-        ? await api.updateAdminUser(editingUser.id, { ...userData, ...(password ? { password } : {}) })
+        ? await api.updateAdminUser(editingUser.id, {
+            ...userData,
+            ...(password ? { password, ...(rootAccount ? { currentPassword } : {}) } : {})
+          })
         : await api.createAdminUser({ ...userData, password });
       if (!savedUser) throw new Error('O servidor não confirmou a alteração do utilizador.');
 
@@ -281,7 +291,34 @@ export const UsersPrivilegesManager: React.FC = () => {
                 URL da fotografia
                 <input type="url" maxLength={2048} value={avatar} onChange={event => setAvatar(event.target.value)} placeholder="https://…" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
               </label>
-              {!editingUser || !isRootAdmin(editingUser) ? (
+              {editingUser && isRootAdmin(editingUser) ? (
+                <>
+                  <label className="space-y-1.5 text-xs font-semibold text-slate-700 sm:col-span-2">
+                    Palavra-passe atual
+                    <input
+                      type="password"
+                      required={!!password}
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={event => setCurrentPassword(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    />
+                  </label>
+                  <label className="space-y-1.5 text-xs font-semibold text-slate-700 sm:col-span-2">
+                    Nova palavra-passe (opcional)
+                    <input
+                      type="password"
+                      minLength={12}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={event => setPassword(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    />
+                    <span className="block font-normal text-slate-500">Mínimo de 12 caracteres. A palavra-passe não é exibida nem armazenada em texto simples.</span>
+                  </label>
+                </>
+              ) : (
                 <label className="space-y-1.5 text-xs font-semibold text-slate-700 sm:col-span-2">
                   {editingUser ? 'Nova palavra-passe (opcional)' : 'Palavra-passe inicial *'}
                   <input
@@ -296,13 +333,13 @@ export const UsersPrivilegesManager: React.FC = () => {
                   />
                   <span className="block font-normal text-slate-500">Mínimo de 12 caracteres. A palavra-passe não é exibida nem armazenada em texto simples.</span>
                 </label>
-              ) : null}
+              )}
             </div>
 
             {editingUser && isRootAdmin(editingUser) ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>A conta principal mantém acesso total. A palavra-passe é validada pelo hash armazenado no ficheiro de dados.</p>
+                <p>A conta principal mantém acesso total. Para alterar a palavra-passe, informe a atual e escolha uma nova com pelo menos 12 caracteres.</p>
               </div>
             ) : (
               <fieldset className="space-y-2 rounded-xl border border-slate-200 p-4">

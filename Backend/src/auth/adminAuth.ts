@@ -89,9 +89,9 @@ export function revokeAdminSession(token: string | undefined): void {
   if (token) sessions.delete(token);
 }
 
-export function revokeUserSessions(userId: string): void {
+export function revokeUserSessions(userId: string, exceptToken?: string): void {
   for (const [token, session] of sessions) {
-    if (session.userId === userId) sessions.delete(token);
+    if (session.userId === userId && token !== exceptToken) sessions.delete(token);
   }
 }
 
