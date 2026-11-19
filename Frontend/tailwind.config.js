@@ -36,8 +36,8 @@ export default {
         }
       },
       fontFamily: {
-        cinzel: ['"Times New Roman"', 'Times', 'serif'],
-        sans: ['"Times New Roman"', 'Times', 'serif'],
+        cinzel: ['Aptos', 'Aptos Body', 'Segoe UI', 'sans-serif'],
+        sans: ['Aptos', 'Aptos Body', 'Segoe UI', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 4px 20px -2px rgba(20, 36, 59, 0.06), 0 2px 6px -1px rgba(20, 36, 59, 0.04)',

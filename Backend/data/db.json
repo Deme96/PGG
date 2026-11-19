@@ -1434,6 +1434,15 @@
       "name": "Pr. Daniel Sanhá",
       "email": "admin@portalgospel.gw",
       "role": "admin",
+      "isActive": true,
+      "adminPermissions": [
+        "departments",
+        "hr",
+        "patrimony",
+        "correspondence",
+        "finances",
+        "settings"
+      ],
       "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
       "phone": "+245 955 123 456",
       "twoFactorEnabled": true
@@ -1443,6 +1452,10 @@
       "name": "Moisés Gomes",
       "email": "redacao@portalgospel.gw",
       "role": "journalist",
+      "isActive": true,
+      "adminPermissions": [
+        "settings"
+      ],
       "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
       "phone": "+245 955 234 567",
       "twoFactorEnabled": true
@@ -1452,6 +1465,10 @@
       "name": "Irmã Dulce Embaló",
       "email": "artista@portalgospel.gw",
       "role": "artist",
+      "isActive": true,
+      "adminPermissions": [
+        "correspondence"
+      ],
       "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
       "phone": "+245 955 778 899",
       "twoFactorEnabled": true
@@ -1461,6 +1478,8 @@
       "name": "Helena Vieira",
       "email": "seguidor@portalgospel.gw",
       "role": "follower",
+      "isActive": true,
+      "adminPermissions": [],
       "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
       "phone": "+245 966 882 110",
       "twoFactorEnabled": true

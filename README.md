@@ -15,12 +15,11 @@ PGG/
 │   └── src/
 ├── Backend/                      # API Express, autenticação e persistência
 │   ├── src/
-│   ├── database/postgres_schema.sql
-│   └── data/db.json              # origem preservada para a primeira migração
+│   └── data/db.json              # armazenamento persistente do backend
 └── package.json                  # Workspaces e comandos para os dois serviços
 ```
 
-As instruções e scripts atuais usam exclusivamente `Backend/`; a antiga pasta `server/` fica preservada como arquivo e não participa da execução nem da migração.
+As instruções e scripts atuais usam exclusivamente `Backend/`; a antiga pasta `server/` fica preservada como arquivo e não participa da execução.
 
 ---
 
@@ -58,7 +57,7 @@ O backend expõe endpoints completos com respostas em JSON:
 | **Autenticação** | `POST` | `/api/auth/login` | Sessão administrativa validada pelo backend |
 | | `GET` | `/api/auth/session` | Validação da sessão administrativa |
 | | `POST` | `/api/auth/logout` | Terminar sessão administrativa |
-| | `POST` | `/api/auth/community/login`, `/api/auth/community/register` | Acesso de membros com credenciais guardadas no PostgreSQL |
+| | `POST` | `/api/auth/community/login`, `/api/auth/community/register` | Acesso de membros com credenciais guardadas no ficheiro JSON |
 | **Utilizadores** | `GET`, `POST` | `/api/auth/users` | Listar e criar contas de gestão (administrador principal) |
 | | `PUT`, `DELETE` | `/api/auth/users/:id` | Personalizar, desativar ou remover contas de gestão |
 
@@ -95,7 +94,7 @@ Os ficheiros enviados são guardados em `Backend/uploads/` com nomes gerados pel
 - **Configurações:** Dados do sistema, Notícias, Vídeos, Logs, Backup e Carrossel.
 - **Utilizadores e Privilégios:** gestão de contas individuais, estado da conta e permissões por área, disponível ao administrador principal.
 
-As contas de gestão usam e-mail e palavra-passe próprios, armazenados com hash scrypt no PostgreSQL; as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as sessões ativas da conta. A conta principal `admin@portalgospel.gw` mantém acesso total e também autentica pelo hash armazenado em `users`.
+As contas de gestão usam e-mail e palavra-passe próprios, armazenados com hash scrypt em `Backend/data/db.json`; as permissões são verificadas também pela API. Uma alteração de privilégios ou palavra-passe termina as sessões ativas da conta. O ficheiro inclui as contas `admin@portalgospel.gw` (acesso total), `redacao@portalgospel.gw` (configurações/conteúdo), `artista@portalgospel.gw` (correspondências) e `seguidor@portalgospel.gw` (sem acesso administrativo). Não há palavras-passe padrão: o administrador principal deve definir as credenciais das outras contas na gestão de utilizadores.
 
 ---
 
@@ -110,21 +109,19 @@ npm run dev:all
 Configure a palavra-passe administrativa no ambiente do backend antes de iniciar os serviços:
 
 ```powershell
-$env:DATABASE_URL = "URL_PRIVADA_DO_POSTGRES"
-npm run migrate:postgres
 $env:PGG_ADMIN_BOOTSTRAP_PASSWORD = "uma-palavra-passe-forte"
 npm run admin:bootstrap
 Remove-Item Env:PGG_ADMIN_BOOTSTRAP_PASSWORD
 npm run dev:all
 ```
 
-`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve somente para criar/definir uma vez o hash da conta principal; remova-a do ambiente depois. O login usa o hash persistido no PostgreSQL, não uma variável de ambiente. `DATABASE_URL` é obrigatória e deve ser a URL interna do banco Render que deseja usar; use o nome real indicado pelo Render, que pode incluir um sufixo. Sem ligação, esquema e dados importados válidos o backend não inicia. Para desenvolvimento local, copie `.env.example` para `.env` e configure a URL. O `.env` é ignorado pelo Git; não use nem partilhe a URL com credenciais.
+`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve apenas para gravar uma vez o hash da conta principal; remova-a do ambiente depois. O login valida o hash guardado no ficheiro, não uma variável de ambiente. Para desenvolvimento local, copie `.env.example` para `.env`. `PGG_DATA_FILE` é opcional e permite indicar outro caminho para o JSON; se esse caminho ainda não existir, o backend cria uma cópia inicial de `Backend/data/db.json`.
 
 ### Deploy do backend no Render
 
-O ficheiro `render.yaml` configura o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`. O frontend usa `VITE_API_URL` para chamar a API no backend; o valor de produção está em `Frontend/.env.production` e deve ser atualizado se o endereço público da API mudar. Configure `DATABASE_URL` com a **Internal Database URL** do banco PostgreSQL correto no Render. O Render usa `/api/health` para verificar a disponibilidade do serviço.
+O `render.yaml` descreve o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`, mas o deploy pode ser configurado manualmente no Dashboard do Render. O frontend usa `VITE_API_URL` para chamar a API; atualize `Frontend/.env.production` se o endereço público mudar. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
-Após criar o esquema e importar `Backend/data/db.json` uma única vez, defina temporariamente `PGG_ADMIN_BOOTSTRAP_PASSWORD` no serviço API e execute `npm run admin:bootstrap` no Shell. Remova a variável do ambiente depois da execução. O acesso principal é `admin@portalgospel.gw` com a palavra-passe escolhida; não coloque a palavra-passe em SQL nem a envie por chat.
+Para manter os dados entre deploys, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho dentro do disco (por exemplo, `/var/data/db.json`). Sem um disco persistente, as alterações ao ficheiro podem ser perdidas em reinícios ou novos deploys. Este armazenamento não coordena várias instâncias do backend; mantenha apenas uma. Defina temporariamente `PGG_ADMIN_BOOTSTRAP_PASSWORD` no serviço API e execute `npm run admin:bootstrap` no Shell; remova a variável depois. O acesso principal é `admin@portalgospel.gw` com a palavra-passe escolhida.
 
 Para um deploy manual do Static Site, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. `Frontend/.env.production` fornece o `VITE_API_URL`; uma variável de ambiente definida no Render pode substituí-lo. O endereço é incorporado ao bundle durante o build, então faça novo deploy após alterá-lo. Não coloque nele a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
@@ -146,25 +143,8 @@ npm run build
 ```
 O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulos otimizados.
 
-## PostgreSQL e migração inicial
+## Armazenamento e autenticação
 
-O backend e o frontend usam a API ligada ao PostgreSQL; os dados de conteúdo e gestão não têm fallback para JSON, mocks ou `localStorage`. Preferências de apresentação e o token de sessão administrativa continuam no armazenamento local do browser. O ficheiro `Backend/data/db.json` permanece intacto como origem da importação.
-
-1. Configure `DATABASE_URL` com a URL interna do banco PostgreSQL que o serviço deve utilizar.
-2. Crie as tabelas e índices no banco, uma única vez:
-
-```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f Backend/database/postgres_schema.sql
-```
-
-3. Execute a migração **uma única vez** num ambiente com acesso a `DATABASE_URL` e ao repositório:
-
-```bash
-npm run migrate:postgres
-```
-
-O comando importa as coleções, os IDs e os dados atuais em uma transação. Só prossegue se todas as tabelas estiverem vazias; se o banco já contiver registos, interrompe sem os sobrescrever. Em caso de erro, a transação inteira é revertida e o JSON original não é apagado. Para Render, pode executar o comando no Shell do serviço API após configurar a URL e concluir o deploy.
-
-Se os logs do Render indicarem `site_settings` ausente, execute `npm run migrate:postgres` uma única vez no Shell do serviço API; não adicione esse comando ao Build ou ao Pre-Deploy, pois ele não deve ser repetido após a importação. O script SQL opcional de criação do administrador não substitui esta migração e não deve ser executado antes dela.
+O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. O bootstrap cria a credencial inicial do administrador principal e as restantes contas podem receber palavra-passe pela área **Utilizadores e Privilégios**. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
 
 Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.

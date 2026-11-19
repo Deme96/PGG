@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db, pool } from '../src/db/database.ts';
+import { db } from '../src/db/database.ts';
 import {
   createPasswordCredentials,
   isRootAdmin,
@@ -47,11 +47,9 @@ try {
     });
   }
 
-  console.log(`Credenciais do administrador ${ROOT_ADMIN_EMAIL} gravadas no PostgreSQL.`);
+  console.log(`Credenciais do administrador ${ROOT_ADMIN_EMAIL} gravadas no ficheiro de dados.`);
   console.log('Remova PGG_ADMIN_BOOTSTRAP_PASSWORD do ambiente do serviço.');
 } catch (error) {
   console.error('Bootstrap do administrador falhou:', error);
   process.exitCode = 1;
-} finally {
-  await pool.end();
 }

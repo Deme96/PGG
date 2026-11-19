@@ -1,5 +1,5 @@
 import { Router, Request, Response, type RequestHandler } from 'express';
-import { db, pool } from '../db/database.ts';
+import { db } from '../db/database.ts';
 import {
   createAdminSession,
   createPasswordCredentials,
@@ -86,7 +86,7 @@ function isValidAvatar(value: unknown): value is string | undefined {
 
 // =================== HEALTH CHECK ===================
 apiRouter.get('/health', async (req: Request, res: Response) => {
-  await pool.query('SELECT 1');
+  await db.getSettings();
   res.json({
     status: 'online',
     portal: 'Portal Gospel Guineense API',

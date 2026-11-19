@@ -5,7 +5,7 @@
 @layer base {
   body {
     @apply bg-[#FAF8F4] text-slate-800 antialiased selection:bg-[#C9A44C] selection:text-white;
-    font-family: 'Times New Roman', Times, serif;
+    font-family: 'Aptos', 'Aptos Body', 'Segoe UI', sans-serif;
     background-image:
       radial-gradient(ellipse at top, rgba(201, 164, 76, 0.08), transparent 42%),
       linear-gradient(180deg, #fdfcf9 0%, #faf8f4 52%, #f4efe6 100%);
@@ -13,7 +13,7 @@
   }
 
   h1, h2, h3, .font-heading {
-    font-family: 'Times New Roman', Times, serif;
+    font-family: 'Aptos', 'Aptos Body', 'Segoe UI', sans-serif;
   }
 
   button, input, select, textarea {
@@ -40,7 +40,7 @@
 }
 
 .menu-font {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Aptos', 'Aptos Body', 'Segoe UI', sans-serif;
 }
 
 /* Custom scrollbars */

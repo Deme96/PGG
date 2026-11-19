@@ -258,7 +258,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         if (active) setDataReady(true);
       } catch (err) {
-        console.error('Não foi possível carregar os dados do PostgreSQL:', err);
+        console.error('Não foi possível carregar os dados do portal:', err);
         if (active) setDataLoadError(err instanceof Error ? err.message : 'Não foi possível carregar os dados do servidor.');
       }
     }

@@ -7,7 +7,7 @@ import { apiRouter } from './routes/apiRouter.ts';
 import { getAdminSession, getBearerToken } from './auth/adminAuth.ts';
 import { canAccessAdminPath } from './auth/adminPermissions.ts';
 import { musicUploadsDirectory } from './middleware/musicUpload.ts';
-import { db, pool } from './db/database.ts';
+import { db } from './db/database.ts';
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
 
@@ -82,7 +82,7 @@ app.use('/api/*', (req, res) => {
 app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(`[PGG-API] ${req.method} ${req.originalUrl} failed:`, error);
   if (res.headersSent) return next(error);
-  res.status(500).json({ error: 'Não foi possível concluir o pedido. Verifique a ligação à base de dados.' });
+  res.status(500).json({ error: 'Não foi possível concluir o pedido. Verifique o armazenamento do portal.' });
 });
 
 async function startServer() {
@@ -96,13 +96,12 @@ async function startServer() {
    Servidor ativo em:    http://localhost:${PORT}
    Endpoints da API:     http://localhost:${PORT}/api
    Verificação (Health): http://localhost:${PORT}/api/health
-   Base de Dados:        PostgreSQL (DATABASE_URL)
+   Base de Dados:        Ficheiro JSON
   ==============================================================
   `);
     });
   } catch (error) {
     console.error('[PGG-API] Não foi possível iniciar o backend:', error);
-    await pool.end();
     process.exitCode = 1;
   }
 }

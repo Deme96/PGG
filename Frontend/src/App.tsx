@@ -40,7 +40,7 @@ export function App() {
             {dataLoadError ? 'Não foi possível ligar ao sistema' : 'A ligar ao sistema…'}
           </h1>
           <p className="mt-3 text-sm text-slate-600">
-            {dataLoadError || 'A carregar os dados do PostgreSQL.'}
+            {dataLoadError || 'A carregar os dados do portal.'}
           </p>
           {dataLoadError && (
             <button
