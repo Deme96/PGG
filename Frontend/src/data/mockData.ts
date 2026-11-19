@@ -1,0 +1,1373 @@
+import {
+  Article,
+  Video,
+  Artist,
+  CarouselSlide,
+  Department,
+  Staff,
+  ScheduleEntry,
+  CoverageRequest,
+  Partnership,
+  MusicRequest,
+  FinanceEntry,
+  Asset,
+  Liability,
+  Task,
+  SystemLog,
+  Backup,
+  SiteSetting,
+  VisitorPing
+} from '../types';
+
+export const initialSiteSettings: SiteSetting = {
+  portalName: 'Portal Gospel Guineense',
+  slogan_pt: 'A Voz e a Luz da Comunidade Gospel na Guiné-Bissau',
+  slogan_en: 'The Voice and Light of the Gospel Community in Guinea-Bissau',
+  slogan_fr: 'La Voix et la Lumière de la Communauté Gospel en Guinée-Bissau',
+  contactPhone: '+245 955 400 300 / +245 966 200 100',
+  contactEmail: 'portalgospelgpc@gmail.com',
+  contactAddress: 'Avenida Combatentes da Liberdade da Pátria, Bairro de Santa Luzia, Bissau, Guiné-Bissau',
+  facebookUrl: 'https://facebook.com',
+  youtubeUrl: 'https://youtube.com',
+  instagramUrl: 'https://instagram.com',
+  defaultLanguage: 'pt',
+  maintenanceMode: false,
+  totalVisitorsCount: 48920
+};
+
+export const initialCarouselSlides: CarouselSlide[] = [
+  {
+    id: 'slide_1',
+    title_pt: 'Grande Cruzada de Esperança e Louvor em Bissau Reúne Milhares de Fiéis',
+    title_en: 'Grand Crusade of Hope and Praise in Bissau Brings Together Thousands of Believers',
+    title_fr: 'Grande Croisade d’Espoir et de Louange à Bissau Rassemble des Milliers de Fidèles',
+    subtitle_pt: 'Três dias de avivamento espiritual, oração pela paz na Guiné-Bissau e ministrações de líderes eclesiásticos de todo o país.',
+    subtitle_en: 'Three days of spiritual revival, prayer for peace in Guinea-Bissau and ministry from ecclesiastical leaders across the nation.',
+    subtitle_fr: 'Trois jours de réveil spirituel, de prière pour la paix en Guinée-Bissau et de ministères de leaders ecclésiastiques de tout le pays.',
+    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1600&auto=format&fit=crop&q=80',
+    buttonText_pt: 'Ler Reportagem Completa',
+    buttonText_en: 'Read Full Coverage',
+    buttonText_fr: 'Lire le Reportage Complet',
+    buttonLink: 'news-1',
+    active: true,
+    order: 1
+  },
+  {
+    id: 'slide_2',
+    title_pt: 'Novo Movimento da Música Gospel Crioula Conquista Corações na África Ocidental',
+    title_en: 'New Creole Gospel Movement Captivates Hearts Across West Africa',
+    title_fr: 'Le Nouveau Mouvement Gospel Créole Conquiert les Cœurs en Afrique de l’Ouest',
+    subtitle_pt: 'Artistas guineenses fundem ritmos tradicionais como o gumbé e tina com louvor contemporâneo edificante.',
+    subtitle_en: 'Guinean gospel artists fuse traditional rhythms like gumbe and tina with uplifting contemporary praise.',
+    subtitle_fr: 'Les artistes guinéens fusionnent des rythmes traditionnels tels que le gumbé et le tina avec une louange contemporaine édifiante.',
+    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1600&auto=format&fit=crop&q=80',
+    buttonText_pt: 'Explorar Zona do Artista',
+    buttonText_en: 'Explore Artist Zone',
+    buttonText_fr: 'Explorer l’Espace Artiste',
+    buttonLink: 'artist-zone',
+    active: true,
+    order: 2
+  },
+  {
+    id: 'slide_3',
+    title_pt: 'Transmissões em Direto: Acompanhe Cultos e Celebrações em Todo o País',
+    title_en: 'Live Broadcasts: Tune In to Services and Celebrations Nationwide',
+    title_fr: 'Diffusions en Direct: Suivez les Cultes et Célébrations à Travers Tout le Pays',
+    subtitle_pt: 'Do Estádio 24 de Setembro às congregações em Gabú e Bafatá, a nossa equipa de transmissão leva a bênção até si.',
+    subtitle_en: 'From the 24 de Setembro Stadium to congregations in Gabú and Bafatá, our broadcast crew brings the blessing to you.',
+    subtitle_fr: 'Du stade 24 de Setembro aux assemblées de Gabú et Bafatá, notre régie mobile apporte la bénédiction chez vous.',
+    imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1600&auto=format&fit=crop&q=80',
+    buttonText_pt: 'Assistir aos Vídeos',
+    buttonText_en: 'Watch Videos',
+    buttonText_fr: 'Regarder les Vidéos',
+    buttonLink: 'videos',
+    active: true,
+    order: 3
+  }
+];
+
+export const initialArticles: Article[] = [
+  {
+    id: 'news-1',
+    title_pt: 'Histórico Encontro Nacional de Lideranças Evangélicas em Bissau Reforça Unidade e Intercessão',
+    title_en: 'Historic National Gathering of Evangelical Leaders in Bissau Strengthens Unity and Prayer',
+    title_fr: 'Rencontre Nationale Historique des Dirigeants Évangéliques à Bissau Renforce l’Unité et l’Intercession',
+    summary_pt: 'Representantes de mais de 40 denominações e convenções eclesiásticas assinam compromisso conjunto para ações sociais e oração permanente pela nação.',
+    summary_en: 'Representatives of more than 40 church denominations and conventions sign a joint agreement for community action and continuous prayer for the nation.',
+    summary_fr: 'Les représentants de plus de 40 dénominations ecclésiales signent un accord conjoint d’action sociale et de prière permanente pour la nation.',
+    content_pt: `Num ambiente de profunda comunhão e reverência espiritual, realizou-se no Centro Bíblico de Bissau o Encontro Nacional de Lideranças Evangélicas da Guiné-Bissau. O encontro congregou pastores, bispos, missionários e líderes de ministérios oriundos de todas as regiões do país, desde Cacheu até Tombali.
+
+O tema central focou o papel transformador da igreja na educação comunitária, reconciliação cívica e no apoio aos jovens desfavorecidos. Durante os três dias de reflexão bíblica, foram anunciados novos polos de formação teológica e projetos conjuntos de perfuração de poços de água potável no interior do país, financiados por parcerias de cooperação cristã.
+
+O Pastor Presidente da Convenção Batista sublinhou: "A igreja de Cristo na Guiné-Bissau é chamada a ser sal e luz, edificando vidas e promovendo a paz que transcende qualquer desafio terreno."`,
+    content_en: `In an atmosphere of deep fellowship and spiritual reverence, the National Gathering of Evangelical Leaders of Guinea-Bissau took place at the Bissau Biblical Centre. The conference gathered pastors, bishops, missionaries, and ministry leaders representing regions across the country, from Cacheu to Tombali.
+
+The main theme highlighted the church's transformative role in community education, civic reconciliation, and youth empowerment. During three days of biblical deliberation, joint initiatives were unveiled including vocational training centers and clean water borehole projects in rural regions funded by international Christian partnerships.`,
+    content_fr: `Dans une atmosphère de profonde communion et de ferveur spirituelle, la Rencontre Nationale des Dirigeants Évangéliques de Guinée-Bissau s’est tenue au Centre Biblique de Bissau. La conférence a réuni des pasteurs, évêques, missionnaires et responsables de ministères venus de toutes les régions du pays, de Cacheu à Tombali.
+
+Le thème central a mis en lumière le rôle transformateur de l’Église dans l’éducation communautaire, la réconciliation civique et l’accompagnement des jeunes.`,
+    category: 'Igrejas',
+    author: 'Moisés Gomes',
+    authorRole: 'Redator Principal PGG',
+    date: '2026-11-18',
+    imageUrl: 'https://images.unsplash.com/photo-1543807535-eceef0bc6599?w=900&auto=format&fit=crop&q=80',
+    readTime: '4 min',
+    isFeatured: true,
+    views: 1420,
+    tags: ['Unidade', 'Liderança', 'Bissau', 'Igrejas']
+  },
+  {
+    id: 'news-2',
+    title_pt: 'Festival de Louvor Crioulo de Bafatá Celebra 10 Anos de Ministério Musical',
+    title_en: 'Bafatá Creole Praise Festival Celebrates 10 Years of Gospel Music Ministry',
+    title_fr: 'Le Festival de Louange Créole de Bafatá Célèbre ses 10 Ans de Ministère Musical',
+    summary_pt: 'Grupos corais de Canchungo, Gabú e Bissau participaram na edição comemorativa que encheu o anfiteatro municipal com ritmos de adoração genuína.',
+    summary_en: 'Choir groups from Canchungo, Gabú, and Bissau participated in the anniversary celebration filling the city amphitheater with authentic worship rhythms.',
+    summary_fr: 'Des chorales de Canchungo, Gabú et Bissau ont pris part à cette édition anniversaire célébrant dix années d’adoration créole inspirée.',
+    content_pt: `A cidade histórica de Bafatá foi palco no último sábado do 10.º Festival Anual de Louvor Crioulo. Mais de 2.500 fiéis reuniram-se para entoar canções em Crioulo, Balanta, Fula e Mandinga, exaltando a soberania de Deus. O festival consagrou jovens talentos guineenses e prestou homenagem aos pioneiros da música sacra no país.`,
+    content_en: `The historic city of Bafatá hosted the 10th Annual Creole Praise Festival last Saturday. Over 2,500 believers gathered to praise in Creole, Balanta, Fula, and Mandinka, honoring the heritage of worship in Guinea-Bissau.`,
+    content_fr: `La ville historique de Bafatá a accueilli samedi dernier le 10e Festival Annuel de Louange Créole. Plus de 2 500 croyants se sont rassemblés pour louer en créole et en langues locales.`,
+    category: 'Música',
+    author: 'Moisés Gomes',
+    date: '2026-11-16',
+    imageUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=900&auto=format&fit=crop&q=80',
+    readTime: '3 min',
+    views: 980,
+    tags: ['Música Gospel', 'Bafatá', 'Cultura']
+  },
+  {
+    id: 'news-3',
+    title_pt: 'Missão Médica Cristã Realiza Mais de 800 Consultas Gratuitas na Região de Oio',
+    title_en: 'Christian Medical Mission Delivers Over 800 Free Consultations in Oio Region',
+    title_fr: 'Une Mission Médicale Chrétienne Réalise Plus de 800 Consultations Gratuites dans la Région d’Oio',
+    summary_pt: 'Equipa voluntária de médicos, enfermeiros e conselheiros espirituais levou cuidados de saúde primária e distribuição de medicamentos essenciais.',
+    summary_en: 'Volunteer medical staff and spiritual counselors brought primary healthcare and distributed essential medication to rural communities.',
+    summary_fr: 'Une équipe de soignants volontaires a dispensé des soins de santé primaires et distribué des médicaments dans les villages d’Oio.',
+    content_pt: `Numa iniciativa conjunta da Associação de Profissionais de Saúde Cristãos da Guiné-Bissau e missões parceiras, a caravana médica esteve presente em Mansôa e aldeias circunvizinhas. Foram realizadas consultas de oftalmologia, pediatria e medicina geral, acompanhadas por momentos de oração e conforto espiritual.`,
+    content_en: `A medical caravan visited Mansôa and surrounding villages, providing pediatrics, eye exams, and pharmacy distributions with spiritual encouragement.`,
+    content_fr: `Une caravana médica a visité Mansôa et les villages environnants pour dispenser des soins pédiatriques et généraux.`,
+    category: 'Testemunhos',
+    author: 'Helena Vieira',
+    date: '2026-11-14',
+    imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&auto=format&fit=crop&q=80',
+    readTime: '3 min',
+    views: 740,
+    tags: ['Ação Social', 'Saúde', 'Oio', 'Missões']
+  },
+  {
+    id: 'news-4',
+    title_pt: 'Assembleia Geral da Aliança Bíblica da Guiné-Bissau Anuncia Tradução dos Salmos em Mais Três Línguas Nacionais',
+    title_en: 'Bible Society of Guinea-Bissau General Assembly Announces Psalms Translation into Three More National Languages',
+    title_fr: 'L’Assemblée Générale de l’Alliance Biblique Annonce la Traduction des Psaumes en Trois Nouvelles Langues',
+    summary_pt: 'O projeto linguístico conta com tradutores nativos dedicados a tornar a Palavra acessível nas línguas maternas do povo guineense.',
+    summary_en: 'The linguistic initiative involves native mother-tongue translators dedicated to making Scripture accessible across the country.',
+    summary_fr: 'Le projet linguistique mobilise des traducteurs locaux pour rendre les Écritures accessibles dans les langues maternelles.',
+    content_pt: `A Aliança Bíblica Guineense realizou a sua sessão ordinária anual, apresentando os avanços na tradução das Sagradas Escrituras. Os livros dos Salmos e Provérbios passam agora a estar disponíveis em formatos impressos e em áudio para as comunidades de língua Bijagó, Manjaco e Papel.`,
+    content_en: `The Bible Society held its annual assembly, highlighting milestone translations of the Psalms and Proverbs in Bijagó, Manjaco, and Papel languages.`,
+    content_fr: `L’Alliance Biblique a tenu son assemblée annuelle, dévoilant la traduction des Psaumes en bijagó, mandjak et papel.`,
+    category: 'Igrejas',
+    author: 'Pr. Daniel Sanhá',
+    date: '2026-11-12',
+    imageUrl: 'https://images.unsplash.com/photo-1507434965515-61970f2bd7c6?w=900&auto=format&fit=crop&q=80',
+    readTime: '4 min',
+    views: 890,
+    tags: ['Bíblia', 'Tradução', 'Cultura']
+  },
+  {
+    id: 'news-5',
+    title_pt: 'COMUNICADO OFICIAL: Abertura das Inscrições para a Conferência Nacional da Juventude Gospel 2026',
+    title_en: 'OFFICIAL NOTICE: Registrations Open for the 2026 National Gospel Youth Conference',
+    title_fr: 'COMMUNIQUÉ OFFICIEL: Ouverture des Inscriptions à la Conférence Nationale des Jeunes Gospel 2026',
+    summary_pt: 'Jovens de todas as igrejas da Guiné-Bissau podem agora inscrever-se para o maior retiro anual de capacitação, música e evangelização.',
+    summary_en: 'Youth from all churches across Guinea-Bissau can now register for the largest annual discipleship, music, and outreach retreat.',
+    summary_fr: 'Les jeunes de toutes les assemblées peuvent s’inscrire au plus grand rassemblement annuel de formation et louange.',
+    content_pt: `A Secretaria Geral do Portal Gospel Guineense e a Coordenação da Juventude Inter-Denominacional tornam público que se encontram abertas as inscrições para o Retiro e Conferência Nacional da Juventude. O evento terá lugar nas instalações do Instituto Bíblico de Canchungo no mês de Dezembro.`,
+    content_en: `Registration is officially open for the National Youth Conference taking place at the Canchungo Bible Institute.`,
+    content_fr: `Les inscriptions sont officiellement ouvertes pour la Conférence Nationale de la Jeunesse à Canchungo.`,
+    category: 'Juventude',
+    author: 'Secretaria Geral',
+    date: '2026-11-10',
+    imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&auto=format&fit=crop&q=80',
+    readTime: '2 min',
+    isAnnouncement: true,
+    views: 1150,
+    tags: ['Comunicado', 'Juventude', 'Conferência']
+  },
+  {
+    id: 'news-6',
+    title_pt: 'COMUNICADO: Portal Gospel Guineense Lança Linha Direta para Apoio Pastoral e Cobertura Comunitária',
+    title_en: 'NOTICE: Guinean Gospel Portal Launches Direct Hotline for Pastoral Support and Community Coverage',
+    title_fr: 'COMMUNIQUÉ: Le Portail Gospel Lance une Ligne Directe d’Assistance Pastorale et Médiatique',
+    summary_pt: 'Novo canal via WhatsApp e telefone disponível 24 horas para lideranças eclesiásticas solicitarem cobertura de eventos.',
+    summary_en: 'New dedicated hotline via WhatsApp and phone available 24/7 for church leaders to request media coverage.',
+    summary_fr: 'Une nouvelle ligne d’assistance téléphonique et WhatsApp est opérationnelle pour faciliter les demandes de reportage.',
+    content_pt: `A Direção do Portal Gospel Guineense informa todos os líderes e fiéis que passa a estar disponível uma linha direta dedicada à receção de pedidos de cobertura jornalística, avisos de cultos fúnebres de servos de Deus e anúncios de cruzadas evangelísticas.`,
+    content_en: `PGG management announces a dedicated 24/7 hotline for media coverage requests and official notifications.`,
+    content_fr: `La direction du Portail Gospel met en service une ligne dédiée aux demandes de couverture médiatique et avis officiels.`,
+    category: 'Eventos',
+    author: 'Direção PGG',
+    date: '2026-11-08',
+    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&auto=format&fit=crop&q=80',
+    readTime: '2 min',
+    isAnnouncement: true,
+    views: 620,
+    tags: ['Comunicado', 'Suporte', 'Cobertura']
+  }
+];
+
+export const initialVideos: Video[] = [
+  {
+    id: 'vid-1',
+    title_pt: 'Culto de Ação de Graças pela Paz na Guiné-Bissau - Transmissão Completa',
+    title_en: 'Thanksgiving Service for Peace in Guinea-Bissau - Full Broadcast',
+    title_fr: 'Culte d’Action de Grâce pour la Paix en Guinée-Bissau - Diffusion Intégrale',
+    description_pt: 'Gravação em direto da celebração interdenominacional com cânticos em crioulo e oração pelas autoridades governamentais e pelo povo guineense.',
+    description_en: 'Live recording of the interdenominational service with Creole songs and prayer for national peace.',
+    description_fr: 'Enregistrement en direct du culte interconfessionnel avec des cantiques en créole pour la paix.',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeId: 'dQw4w9WgXcQ',
+    duration: '1h 45m',
+    category: 'Louvor & Adoração',
+    date: '2026-11-17',
+    views: 3200
+  },
+  {
+    id: 'vid-2',
+    title_pt: 'Entrevista Exclusiva: Irmã Dulce Embaló Fala Sobre o Novo Álbum "Fé Na N’ha Deus"',
+    title_en: 'Exclusive Interview: Sister Dulce Embaló on New Album "Fé Na N’ha Deus"',
+    title_fr: 'Interview Exclusive: Sœur Dulce Embaló Présente son Album "Fé Na N’ha Deus"',
+    description_pt: 'Uma conversa intimista sobre os testemunhos que inspiraram as 12 faixas do álbum e o impacto da música gospel na juventude de Bissau.',
+    description_en: 'An intimate conversation about the testimonies behind the 12 songs and the cultural impact in Bissau.',
+    description_fr: 'Un entretien émouvant sur les témoignages ayant inspiré ses 12 nouveaux titres.',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeId: 'dQw4w9WgXcQ',
+    duration: '28m',
+    category: 'Entrevistas',
+    date: '2026-11-15',
+    views: 2150
+  },
+  {
+    id: 'vid-3',
+    title_pt: 'Mensagem Pastoral: "Permanecer Firmes na Rocha em Tempos de Incerteza"',
+    title_en: 'Pastoral Message: "Standing Firm on the Rock in Uncertain Times"',
+    title_fr: 'Message Pastoral: "Demeurer Fermes sur le Roc en Période d’Incertitude"',
+    description_pt: 'Pr. Daniel Sanhá ministra uma poderosa palavra de esperança no Centro Bíblico da IEGB em Bissau.',
+    description_en: 'Pastor Daniel Sanhá preaches a powerful message of hope at the IEGB Bible Centre in Bissau.',
+    description_fr: 'Le pasteur Daniel Sanhá délivre un message puissant d’espérance et de foi.',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeId: 'dQw4w9WgXcQ',
+    duration: '42m',
+    category: 'Pregações',
+    date: '2026-11-11',
+    views: 1840
+  },
+  {
+    id: 'vid-4',
+    title_pt: 'Grande Coral IEGB Bissau: Medley Tradicional de Louvor Crioulo',
+    title_en: 'Great Choir IEGB Bissau: Traditional Creole Praise Medley',
+    title_fr: 'Grand Chœur IEGB Bissau: Medley Traditionnel de Louange Créole',
+    description_pt: 'Apresentação vibrante com mais de 60 vozes e instrumentos tradicionais guineenses gravado em alta definição.',
+    description_en: 'Vibrant performance featuring 60 voices and traditional Guinean instruments in HD.',
+    description_fr: 'Prestation vibrante réunissant plus de 60 choristes et instruments traditionnels.',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeId: 'dQw4w9WgXcQ',
+    duration: '14m',
+    category: 'Louvor & Adoração',
+    date: '2026-11-05',
+    views: 4500
+  }
+];
+
+export const initialArtists: Artist[] = [
+  {
+    id: 'art-1',
+    name: 'Irmã Dulce Embaló',
+    biography_pt: 'Nascida em Bissau, a Irmã Dulce é uma das vozes mais reverenciadas da música sacra guineense. Com três álbuns lançados, o seu ministério tem tocado milhares de vidas dentro e fora do país através do ritmo Gumbé e baladas de adoração em Crioulo.',
+    biography_en: 'Born in Bissau, Sister Dulce is one of the most revered voices in Guinean gospel music, blending local gumbe rhythms with inspiring devotion.',
+    biography_fr: 'Née à Bissau, Sœur Dulce est l’une des plus grandes figures de la musique gospel bissau-guinéenne, alliant rythmes locaux et adoration spirituelle.',
+    genre: 'Afro-Gospel',
+    location: 'Bissau (Bairro Militar)',
+    imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80',
+    church: 'Igreja Evangélica da Guiné-Bissau (IEGB)',
+    popularSongs: ['Fé Na N’ha Deus', 'Deus Ka Ta Falha', 'Aleluia Crioulo'],
+    socialLinks: {
+      youtube: 'https://youtube.com',
+      instagram: 'https://instagram.com',
+      facebook: 'https://facebook.com',
+      spotify: 'https://spotify.com'
+    },
+    phone: '+245 955 778 899',
+    email: 'dulce.gospel@gmail.com'
+  },
+  {
+    id: 'art-2',
+    name: 'Irmão Moisés Balanta',
+    biography_pt: 'Cantor e compositor natural de Bafatá, Moisés dedica-se ao louvor acústico e adoração congregacional. As suas músicas destacam-se pela profundidade bíblica e arranjos tradicionais em guitarra acústica e percussão cabaça.',
+    biography_en: 'Singer and composer from Bafatá, Moisés focuses on acoustic congregational worship with deep biblical lyricism and traditional percussion.',
+    biography_fr: 'Chantre et compositeur originaire de Bafatá, Moisés célèbre le Seigneur avec des guitares acoustiques et des percussions traditionnelles.',
+    genre: 'Worship & Adoração',
+    location: 'Bafatá / Bissau',
+    imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80',
+    church: 'Assembleia de Deus de Bissau',
+    popularSongs: ['Senhor É N’ha Pastor', 'Fonte di Vida', 'Gratidão Na Coração'],
+    socialLinks: {
+      youtube: 'https://youtube.com',
+      facebook: 'https://facebook.com'
+    },
+    phone: '+245 966 334 455',
+    email: 'moises.louvor@gmail.com'
+  },
+  {
+    id: 'art-3',
+    name: 'Banda Adoração Guiné',
+    biography_pt: 'Grupo de jovens músicos pioneiros do Gospel Contemporâneo e Kizomba Gospel na África Ocidental. Conhecidos pelas suas energéticas ministrações de louvor nos estádios e conferências da juventude.',
+    biography_en: 'Pioneering youth contemporary gospel band leading stadium praise rallies across West Africa.',
+    biography_fr: 'Groupe de jeunes musiciens pionniers du gospel contemporain et de la louange urbaine à Bissau.',
+    genre: 'Kizomba Gospel',
+    location: 'Bissau (Chão de Papel)',
+    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
+    church: 'Igreja Baptista Central de Bissau',
+    popularSongs: ['Dança di Vitória', 'Rei dos Reis', 'Luz Na Escuridão'],
+    socialLinks: {
+      youtube: 'https://youtube.com',
+      instagram: 'https://instagram.com',
+      spotify: 'https://spotify.com'
+    },
+    phone: '+245 955 889 900',
+    email: 'adoracaoguine@portalgospel.gw'
+  },
+  {
+    id: 'art-4',
+    name: 'Coral Vozes de Sião - Gabú',
+    biography_pt: 'Histórico coral da região leste da Guiné-Bissau com mais de 35 coralistas. As suas harmonias polifónicas combinam cânticos clássicos com letras nas línguas Fula e Crioulo.',
+    biography_en: 'Historic choir from eastern Guinea-Bissau with 35 singers blending classical choir hymns with local languages.',
+    biography_fr: 'Chœur réputé de l’est de la Guinée-Bissau combinant chants sacrés polyphoniques et langues locales.',
+    genre: 'Coral',
+    location: 'Gabú',
+    imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+    church: 'Igreja Evangélica de Gabú',
+    popularSongs: ['Glória a Deus nas Alturas', 'Hosana no Oriente', 'Paz em Sião'],
+    socialLinks: {
+      youtube: 'https://youtube.com',
+      facebook: 'https://facebook.com'
+    },
+    phone: '+245 966 112 233',
+    email: 'vozes.siao.gabu@gmail.com'
+  }
+];
+
+export const initialDepartments: Department[] = [
+  {
+    id: 'dept-1',
+    code: 'DIRECAO',
+    name_pt: 'Direção Geral',
+    name_en: 'General Board & Direction',
+    name_fr: 'Direction Générale',
+    headOfDept: {
+      name: 'Pr. Daniel Sanhá',
+      role: 'Diretor Geral e Coordenador Executivo',
+      email: 'direcao@portalgospel.gw',
+      phone: '+245 955 123 456',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Responsável pela visão estratégica, relações institucionais com convenções de igrejas, supervisão editorial e sustentabilidade orçamental do portal.',
+    description_en: 'Responsible for strategic vision, institutional ties with church conventions, editorial governance and budget sustainability.',
+    description_fr: 'Assure la vision stratégique, les relations institutionnelles avec les églises, la gouvernance éditoriale et le budget.',
+    responsibilities_pt: [
+      'Definição da linha editorial cristã e valores doutrinários',
+      'Assinatura de parcerias com igrejas, rádios e patrocinadores',
+      'Aprovação orçamental e prestação de contas trimestral',
+      'Representação oficial do Portal Gospel Guineense perante entidades públicas'
+    ],
+    responsibilities_en: [
+      'Define Christian editorial standards and doctrinal integrity',
+      'Sign partnerships with churches, media, and sponsors',
+      'Budget approvals and quarterly reporting'
+    ],
+    responsibilities_fr: [
+      'Définir la ligne éditoriale chrétienne',
+      'Conclure des partenariats avec les églises et médias',
+      'Approuver le budget et les rapports d’activité'
+    ],
+    budget: 8500000,
+    memberCount: 3,
+    status: 'Ativo',
+    iconName: 'Compass'
+  },
+  {
+    id: 'dept-2',
+    code: 'REPORTAGEM',
+    name_pt: 'Reportagem',
+    name_en: 'Reporting & Fieldwork',
+    name_fr: 'Reportage & Terrain',
+    headOfDept: {
+      name: 'Moisés Gomes',
+      role: 'Chefe de Reportagem e Correspondente',
+      email: 'reportagem@portalgospel.gw',
+      phone: '+245 955 234 567',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Equipa de terreno destacada para cobertura de cultos especiais, vigílias, conferências, funerais solenes e testemunhos comunitários em todas as regiões.',
+    description_en: 'Field team deployed for on-site coverage of church events, vigils, conferences and community testimonies nationwide.',
+    description_fr: 'Équipe de terrain assurant la couverture des cultes, conférences et témoignages dans toutes les régions.',
+    responsibilities_pt: [
+      'Deslocações e reportagens fotográficas e audiovisuais de terreno',
+      'Entrevistas com pastores, músicos e missionários',
+      'Atendimento à fila de pedidos de cobertura pública',
+      'Articulação com correspondentes regionais em Bafatá e Gabú'
+    ],
+    budget: 4200000,
+    memberCount: 6,
+    status: 'Em Operação',
+    iconName: 'Mic'
+  },
+  {
+    id: 'dept-3',
+    code: 'TRANSMISSAO',
+    name_pt: 'Transmissão',
+    name_en: 'Broadcasting & Streaming',
+    name_fr: 'Diffusion & Régie',
+    headOfDept: {
+      name: 'Eng. Domingos Lopes',
+      role: 'Responsável Técnico de Áudio e Streaming',
+      email: 'transmissao@portalgospel.gw',
+      phone: '+245 966 345 678',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Coordena as emissões em direto pela internet, links de rádio FM parceiros, operação de mesas de mistura de áudio e gravação multipista de cultos.',
+    description_en: 'Coordinates live streaming, partner FM radio links, audio mixing console operation, and multitrack service recordings.',
+    description_fr: 'Supervise le streaming en direct, les liaisons radio FM partenaires, la prise de son et la captation vidéo.',
+    responsibilities_pt: [
+      'Gestão dos servidores de streaming e canais no YouTube / Facebook',
+      'Manutenção de câmaras de transmissão e mesa de áudio digital',
+      'Testes prévios de largura de banda e conectividade móvel 4G/5G',
+      'Arquivo de áudio e masterização de podcasts de sermões'
+    ],
+    budget: 6800000,
+    memberCount: 5,
+    status: 'Ativo',
+    iconName: 'Radio'
+  },
+  {
+    id: 'dept-4',
+    code: 'REDACAO',
+    name_pt: 'Redação',
+    name_en: 'Editorial Desk',
+    name_fr: 'Rédaction en Chef',
+    headOfDept: {
+      name: 'Irmã Helena Vieira',
+      role: 'Editora-Chefe de Notícias',
+      email: 'redacao@portalgospel.gw',
+      phone: '+245 955 456 789',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Elaboração, verificação de factos e publicação de artigos em português, inglês e francês. Gestão da secção de notícias e comunicados oficiais.',
+    description_en: 'Fact-checking, drafting, and publishing articles in Portuguese, English, and French. Manages news and official bulletins.',
+    description_fr: 'Rédaction, vérification et publication des articles en trois langues. Gestion des dépêches et communiqués.',
+    responsibilities_pt: [
+      'Redação diária de notícias e acompanhamento do panorama eclesial',
+      'Tradução e adaptação de conteúdos para os idiomas EN e FR',
+      'Revisão gramatical e adequação ao manual de estilo cristão',
+      'Publicação e curadoria do carrossel de destaques'
+    ],
+    budget: 3500000,
+    memberCount: 4,
+    status: 'Ativo',
+    iconName: 'FileText'
+  },
+  {
+    id: 'dept-5',
+    code: 'SECRETARIA_GERAL',
+    name_pt: 'Secretaria Geral',
+    name_en: 'General Secretariat',
+    name_fr: 'Secrétariat Général',
+    headOfDept: {
+      name: 'Irmã Maria da Costa',
+      role: 'Secretária Geral Administrativa',
+      email: 'secretaria@portalgospel.gw',
+      phone: '+245 966 567 890',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Administração geral, arquivo institucional de atas, atendimento telefónico e triagem de pedidos de cobertura e parcerias.',
+    description_en: 'General administration, institutional archives, inbound phone triage and coordination of correspondence.',
+    description_fr: 'Administration générale, archivage, accueil téléphonique et traitement des courriers et accords.',
+    responsibilities_pt: [
+      'Registo e protocolo de correspondências e ofícios',
+      'Gestão de ficheiros de membros e colaboradores de apoio',
+      'Apoio logístico aos departamentos nas deslocações ao interior',
+      'Emissão de credenciais de imprensa evangélica'
+    ],
+    budget: 2200000,
+    memberCount: 3,
+    status: 'Ativo',
+    iconName: 'Building2'
+  },
+  {
+    id: 'dept-6',
+    code: 'DESIGN_GRAFICO',
+    name_pt: 'Design Gráfico',
+    name_en: 'Graphic Design & Media',
+    name_fr: 'Design Graphique & Médias',
+    headOfDept: {
+      name: 'Bernardo Na Fantchamna',
+      role: 'Diretor de Arte e Multimédia',
+      email: 'design@portalgospel.gw',
+      phone: '+245 955 678 901',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+    },
+    description_pt: 'Criação de cartazes digitais, capas para músicas gospel, infografias, identidade visual de transmissões e artes promocionais.',
+    description_en: 'Creation of digital flyers, album covers, stream overlays, infographics and promotional social media assets.',
+    description_fr: 'Création d’affiches numériques, pochettes d’albums, habillages visuels et supports promotionnels.',
+    responsibilities_pt: [
+      'Design de flyers para eventos cristãos e comunicados da redação',
+      'Tratamento de fotografias e criação de miniaturas de vídeos (thumbnails)',
+      'Identidade visual de conferências e marcas parceiras',
+      'Suporte aos artistas cadastrados na Zona do Artista'
+    ],
+    budget: 2800000,
+    memberCount: 3,
+    status: 'Ativo',
+    iconName: 'Palette'
+  }
+];
+
+export const initialStaff: Staff[] = [
+  {
+    id: 'stf-1',
+    name: 'Pr. Daniel Sanhá',
+    email: 'direcao@portalgospel.gw',
+    phone: '+245 955 123 456',
+    role_pt: 'Diretor Geral Executivo',
+    role_en: 'Executive Director',
+    role_fr: 'Directeur Général Exécutif',
+    departmentCode: 'DIRECAO',
+    status: 'Ativo',
+    admissionDate: '2023-01-15',
+    emergencyContact: '+245 955 999 888 (Esposa)',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 98,
+    assignedTasksCount: 4
+  },
+  {
+    id: 'stf-2',
+    name: 'Moisés Gomes',
+    email: 'reportagem@portalgospel.gw',
+    phone: '+245 955 234 567',
+    role_pt: 'Chefe de Reportagem e Jornalista',
+    role_en: 'Chief Reporter & Journalist',
+    role_fr: 'Chef de Reportage & Journaliste',
+    departmentCode: 'REPORTAGEM',
+    status: 'Ativo',
+    admissionDate: '2023-03-01',
+    emergencyContact: '+245 966 222 333 (Irmão)',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 95,
+    assignedTasksCount: 6
+  },
+  {
+    id: 'stf-3',
+    name: 'Irmã Helena Vieira',
+    email: 'redacao@portalgospel.gw',
+    phone: '+245 955 456 789',
+    role_pt: 'Editora de Conteúdos e Redatora',
+    role_en: 'Content Editor & Writer',
+    role_fr: 'Rédactrice en Chef',
+    departmentCode: 'REDACAO',
+    status: 'Ativo',
+    admissionDate: '2023-04-10',
+    emergencyContact: '+245 955 333 444',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 96,
+    assignedTasksCount: 5
+  },
+  {
+    id: 'stf-4',
+    name: 'Eng. Domingos Lopes',
+    email: 'transmissao@portalgospel.gw',
+    phone: '+245 966 345 678',
+    role_pt: 'Técnico Sénior de Streaming e Som',
+    role_en: 'Senior Audio & Stream Engineer',
+    role_fr: 'Ingénieur du Son & Régie',
+    departmentCode: 'TRANSMISSAO',
+    status: 'Ativo',
+    admissionDate: '2023-02-20',
+    emergencyContact: '+245 966 444 555',
+    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 92,
+    assignedTasksCount: 3
+  },
+  {
+    id: 'stf-5',
+    name: 'Bernardo Na Fantchamna',
+    email: 'design@portalgospel.gw',
+    phone: '+245 955 678 901',
+    role_pt: 'Designer Gráfico e Social Media',
+    role_en: 'Graphic Designer & Social Media',
+    role_fr: 'Graphiste & Médias Sociaux',
+    departmentCode: 'DESIGN_GRAFICO',
+    status: 'Ativo',
+    admissionDate: '2023-06-01',
+    emergencyContact: '+245 955 555 666',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 89,
+    assignedTasksCount: 4
+  },
+  {
+    id: 'stf-6',
+    name: 'Irmã Maria da Costa',
+    email: 'secretaria@portalgospel.gw',
+    phone: '+245 966 567 890',
+    role_pt: 'Secretária Executiva',
+    role_en: 'Executive Secretary',
+    role_fr: 'Secrétaire Exécutive',
+    departmentCode: 'SECRETARIA_GERAL',
+    status: 'Ativo',
+    admissionDate: '2023-05-15',
+    emergencyContact: '+245 966 666 777',
+    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 97,
+    assignedTasksCount: 2
+  },
+  {
+    id: 'stf-7',
+    name: 'Carlos Embaló',
+    email: 'carlos.report@portalgospel.gw',
+    phone: '+245 955 889 001',
+    role_pt: 'Repórter Fotográfico de Terreno',
+    role_en: 'Field Photojournalist',
+    role_fr: 'Photojournaliste de Terrain',
+    departmentCode: 'REPORTAGEM',
+    status: 'Ativo',
+    admissionDate: '2023-08-01',
+    emergencyContact: '+245 955 777 888',
+    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 85,
+    assignedTasksCount: 3
+  },
+  {
+    id: 'stf-8',
+    name: 'Samuel Dju',
+    email: 'samuel.audio@portalgospel.gw',
+    phone: '+245 966 990 112',
+    role_pt: 'Operador de Áudio e Câmara',
+    role_en: 'Camera & Audio Operator',
+    role_fr: 'Opérateur Son & Image',
+    departmentCode: 'TRANSMISSAO',
+    status: 'Férias',
+    admissionDate: '2023-09-10',
+    emergencyContact: '+245 966 888 999',
+    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+    scheduleComplianceRating: 82,
+    assignedTasksCount: 0
+  }
+];
+
+export const initialSchedules: ScheduleEntry[] = [
+  {
+    id: 'sch-1',
+    serviceName: 'Transmissão do Culto Dominical Central IEGB',
+    departmentCode: 'TRANSMISSAO',
+    date: '2026-11-22',
+    startTime: '08:30',
+    endTime: '12:30',
+    staffId: 'stf-4',
+    staffName: 'Eng. Domingos Lopes',
+    status: 'Pendente',
+    notes: 'Verificar cabos XLR e ligação 4G em Santa Luzia antes das 08h00',
+    location: 'Templo Central IEGB, Bissau'
+  },
+  {
+    id: 'sch-2',
+    serviceName: 'Cobertura Fotográfica da Conferência de Jovens em Bafatá',
+    departmentCode: 'REPORTAGEM',
+    date: '2026-11-21',
+    startTime: '14:00',
+    endTime: '19:00',
+    staffId: 'stf-2',
+    staffName: 'Moisés Gomes',
+    status: 'Pendente',
+    notes: 'Entrevistar os líderes dos corais regionais de Gabú e Bafatá',
+    location: 'Pavilhão Municipal de Bafatá'
+  },
+  {
+    id: 'sch-3',
+    serviceName: 'Edição e Tradução do Boletim Semanal em Três Línguas',
+    departmentCode: 'REDACAO',
+    date: '2026-11-19',
+    startTime: '09:00',
+    endTime: '17:00',
+    staffId: 'stf-3',
+    staffName: 'Irmã Helena Vieira',
+    status: 'Cumprido',
+    notes: 'Boletim aprovado e publicado nas plataformas',
+    location: 'Redação Central, Bissau'
+  },
+  {
+    id: 'sch-4',
+    serviceName: 'Produção das Peças Gráficas da Cruzada Nacional',
+    departmentCode: 'DESIGN_GRAFICO',
+    date: '2026-11-18',
+    startTime: '10:00',
+    endTime: '16:00',
+    staffId: 'stf-5',
+    staffName: 'Bernardo Na Fantchamna',
+    status: 'Cumprido',
+    notes: 'Flyers digitais exportados em alta resolução',
+    location: 'Estúdio de Design'
+  },
+  {
+    id: 'sch-5',
+    serviceName: 'Reunião de Direção com a Aliança Evangélica',
+    departmentCode: 'DIRECAO',
+    date: '2026-11-17',
+    startTime: '10:00',
+    endTime: '12:30',
+    staffId: 'stf-1',
+    staffName: 'Pr. Daniel Sanhá',
+    status: 'Cumprido',
+    notes: 'Aprovado apoio conjunto para o mapa de acessos do portal',
+    location: 'Gabinete da Direção'
+  },
+  {
+    id: 'sch-6',
+    serviceName: 'Apoio de Áudio na Vigília de Oração em Bissau Velho',
+    departmentCode: 'TRANSMISSAO',
+    date: '2026-11-14',
+    startTime: '21:00',
+    endTime: '03:00',
+    staffId: 'stf-8',
+    staffName: 'Samuel Dju',
+    status: 'Justificado',
+    notes: 'Colaborador apresentou declaração médica e substituiu pelo estagiário',
+    location: 'Bissau Velho'
+  }
+];
+
+export const initialCoverageRequests: CoverageRequest[] = [
+  {
+    id: 'cov-1',
+    requesterName: 'Pr. António Té',
+    requesterPhone: '+245 955 332 211',
+    requesterEmail: 'antonio.te@assembleia.gw',
+    eventTitle: 'Conferência Anual de Avivamento das Famílias 2026',
+    eventType: 'Conferência',
+    churchOrEntity: 'Assembleia de Deus de Bandim, Bissau',
+    location: 'Bairro de Bandim, Bissau',
+    eventDate: '2026-11-28',
+    eventTime: '16:00',
+    status: 'Pendente',
+    notes: 'Esperam-se mais de 1.200 participantes; solicitam cobertura de vídeo e transmissão ao vivo no portal.',
+    createdAt: '2026-11-18'
+  },
+  {
+    id: 'cov-2',
+    requesterName: 'Missionário João Batista',
+    requesterPhone: '+245 966 443 322',
+    requesterEmail: 'joao.missoes@iegb.org',
+    eventTitle: 'Cruzada Evangelística e Batismo Comunitário nas Águas em Canchungo',
+    eventType: 'Cruzada Evangelística',
+    churchOrEntity: 'Igreja Evangélica de Canchungo',
+    location: 'Praça Pública de Canchungo',
+    eventDate: '2026-12-05',
+    eventTime: '09:00',
+    status: 'Pendente',
+    notes: 'Celebração com batismo de cerca de 70 novos crentes.',
+    createdAt: '2026-11-17'
+  },
+  {
+    id: 'cov-3',
+    requesterName: 'Irmã Dulce Embaló',
+    requesterPhone: '+245 955 778 899',
+    requesterEmail: 'dulce.gospel@gmail.com',
+    eventTitle: 'Concerto de Lançamento do Álbum "Fé Na N’ha Deus"',
+    eventType: 'Lançamento de Álbum',
+    churchOrEntity: 'Ministério Louvor Dulce & Amigos',
+    location: 'Centro Cultural Franco-Bissau-Guineense, Bissau',
+    eventDate: '2026-11-20',
+    eventTime: '18:00',
+    status: 'Aprovado',
+    notes: 'Pedido aprovado pela Direção. Escala gerada com o repórter Moisés Gomes e equipa de vídeo.',
+    scheduleEntryId: 'sch-2',
+    createdAt: '2026-11-12'
+  }
+];
+
+export const initialPartnerships: Partnership[] = [
+  {
+    id: 'part-1',
+    partnerName: 'Igreja Evangélica da Guiné-Bissau (IEGB)',
+    partnerType: 'Igreja',
+    contactPerson: 'Pr. Carlos Mendes',
+    email: 'secretaria.nacional@iegb.org',
+    phone: '+245 955 888 111',
+    country: 'Guiné-Bissau',
+    agreementScope: 'Cobertura oficial de eventos nacionais e veiculação de sermões e boletins.',
+    startDate: '2024-01-01',
+    endDate: '2027-12-31',
+    status: 'Ativo',
+    contributionValue: 2400000
+  },
+  {
+    id: 'part-2',
+    partnerName: 'Missão Cristã Internacional para a África Ocidental',
+    partnerType: 'ONG / Missão Internacional',
+    contactPerson: 'David Miller',
+    email: 'dmiller@westafricamission.org',
+    phone: '+1 202 555 0199',
+    country: 'Estados Unidos / Senegal',
+    agreementScope: 'Financiamento para aquisição de equipamento de áudio e formação de técnicos guineenses.',
+    startDate: '2025-06-01',
+    endDate: '2027-05-31',
+    status: 'Ativo',
+    contributionValue: 8500000
+  },
+  {
+    id: 'part-3',
+    partnerName: 'Rádio Trans Mundial África',
+    partnerType: 'Media Partner',
+    contactPerson: 'Jean-Luc Traoré',
+    email: 'jtraore@twr-africa.org',
+    phone: '+221 33 800 4050',
+    country: 'Senegal / Internacional',
+    agreementScope: 'Partilha de conteúdos radiofónicos e formação técnica em rádio web cristã.',
+    startDate: '2025-01-15',
+    endDate: '2026-12-31',
+    status: 'Ativo',
+    contributionValue: 1200000
+  },
+  {
+    id: 'part-4',
+    partnerName: 'Telecomunicações & Internet Orange Bissau',
+    partnerType: 'Patrocinador',
+    contactPerson: 'Fátima Cassamá',
+    email: 'corporativo@orange.gw',
+    phone: '+245 955 000 000',
+    country: 'Guiné-Bissau',
+    agreementScope: 'Fornecimento de ligação dedicada de fibra ótica com tarifa institucional reduzida.',
+    startDate: '2025-03-01',
+    endDate: '2026-03-01',
+    status: 'Renovação',
+    contributionValue: 3600000
+  }
+];
+
+export const initialMusicRequests: MusicRequest[] = [
+  {
+    id: 'mus-1',
+    artistName: 'Irmão Samuel Sanhá',
+    contactPhone: '+245 955 771 122',
+    contactEmail: 'samuel.sanha.music@gmail.com',
+    songTitle: 'Glória na Terra di Paz',
+    genre: 'Afro-Gospel',
+    audioUrl: 'https://youtube.com/watch?v=sample1',
+    biography: 'Músico e líder de louvor há 8 anos na congregação da Assembleia de Deus de Gabú. Este single aborda o perdão e restauração.',
+    church: 'Assembleia de Deus de Gabú',
+    requestedDate: '2026-11-18',
+    sessionType: 'Publicação de Música',
+    status: 'Em Avaliação',
+    notes: 'Áudio com excelente qualidade técnica de gravação; aguarda aprovação da comissão de redação.'
+  },
+  {
+    id: 'mus-2',
+    artistName: 'Grupo Vozes Celestes de Mansôa',
+    contactPhone: '+245 966 882 233',
+    contactEmail: 'vozescelestes@mansoa.gw',
+    songTitle: 'N’ha Vida É Di Jesus',
+    genre: 'Gospel Tradicional',
+    church: 'Igreja Baptista de Mansôa',
+    requestedDate: '2026-11-15',
+    sessionType: 'Agendamento de Sessão de Estúdio',
+    status: 'Aprovado',
+    notes: 'Sessão de gravação agendada para 25 de Novembro no estúdio central em Bissau.'
+  },
+  {
+    id: 'mus-3',
+    artistName: 'Ministério Juventude em Chamas',
+    contactPhone: '+245 955 993 344',
+    contactEmail: 'jovensemgloria@gmail.com',
+    songTitle: 'Avivamento Já Chegou',
+    genre: 'Gospel Rap',
+    church: 'Comunidade Cristã Viva de Bissau',
+    requestedDate: '2026-11-12',
+    sessionType: 'Entrevista ao Vivo',
+    status: 'Pendente',
+    notes: 'Solicitam presença no programa de jovens do portal na próxima sexta-feira.'
+  }
+];
+
+export const initialFinanceEntries: FinanceEntry[] = [
+  {
+    id: 'fin-1',
+    type: 'Entrada',
+    category: 'Doações Internacionais',
+    amount: 3500000,
+    currency: 'XOF',
+    date: '2026-11-15',
+    paymentMethod: 'Transferência Bancária',
+    reference: 'TRF-WAFM-2026-11',
+    description: 'Subvenção trimestral da Missão Cristã Internacional para infraestrutura de streaming',
+    registeredBy: 'Pr. Daniel Sanhá'
+  },
+  {
+    id: 'fin-2',
+    type: 'Entrada',
+    category: 'Dízimos & Ofertas',
+    amount: 850000,
+    currency: 'XOF',
+    date: '2026-11-14',
+    paymentMethod: 'Wave',
+    reference: 'WAVE-OFF-8841',
+    description: 'Contribuições e ofertas voluntárias de parceiros e membros comunitários de Bissau',
+    registeredBy: 'Irmã Maria da Costa'
+  },
+  {
+    id: 'fin-3',
+    type: 'Entrada',
+    category: 'Serviços de Mídia',
+    amount: 600000,
+    currency: 'XOF',
+    date: '2026-11-12',
+    paymentMethod: 'Orange Money',
+    reference: 'OM-MEDIA-9021',
+    description: 'Serviço de captação e transmissão profissional em direto para o casamento em Bafatá',
+    registeredBy: 'Moisés Gomes'
+  },
+  {
+    id: 'fin-4',
+    type: 'Entrada',
+    category: 'Patrocínio',
+    amount: 1200000,
+    currency: 'XOF',
+    date: '2026-11-05',
+    paymentMethod: 'Transferência Bancária',
+    reference: 'TRF-ORANGE-SPON',
+    description: 'Apoio institucional do patrocinador de telecomunicações para a cobertura do festival',
+    registeredBy: 'Pr. Daniel Sanhá'
+  },
+  {
+    id: 'fin-5',
+    type: 'Saída',
+    category: 'Comunicações / Internet',
+    amount: 450000,
+    currency: 'XOF',
+    date: '2026-11-16',
+    paymentMethod: 'Transferência Bancária',
+    reference: 'FAT-ORANGE-202611',
+    description: 'Pagamento mensal de internet de alta velocidade em fibra ótica para estúdio e servidores',
+    registeredBy: 'Irmã Maria da Costa'
+  },
+  {
+    id: 'fin-6',
+    type: 'Saída',
+    category: 'Combustível / Deslocações',
+    amount: 280000,
+    currency: 'XOF',
+    date: '2026-11-15',
+    paymentMethod: 'Numerário',
+    reference: 'REC-COMB-BAFATA',
+    description: 'Abastecimento da viatura Toyota Hilux para cobertura e reportagem em Bafatá e Gabú',
+    registeredBy: 'Moisés Gomes'
+  },
+  {
+    id: 'fin-7',
+    type: 'Saída',
+    category: 'Equipamentos',
+    amount: 1100000,
+    currency: 'XOF',
+    date: '2026-11-08',
+    paymentMethod: 'Transferência Bancária',
+    reference: 'FAT-AUDIO-GEAR-44',
+    description: 'Compra de 4 microfones sem fios Shure e cabos balanceados blindados para emissão',
+    registeredBy: 'Eng. Domingos Lopes'
+  },
+  {
+    id: 'fin-8',
+    type: 'Saída',
+    category: 'Honorários / Subsídios',
+    amount: 950000,
+    currency: 'XOF',
+    date: '2026-11-01',
+    paymentMethod: 'Transferência Bancária',
+    reference: 'SUB-EQUIP-NOV',
+    description: 'Subsídios de alimentação e transporte aos correspondentes de reportagem do interior',
+    registeredBy: 'Irmã Maria da Costa'
+  }
+];
+
+export const initialAssets: Asset[] = [
+  {
+    id: 'ast-1',
+    code: 'PGG-CAM-01',
+    name: 'Câmara Cinema Sony FX3 4K',
+    category: 'Câmara & Óptica',
+    acquisitionDate: '2024-04-12',
+    acquisitionCost: 2400000,
+    currency: 'XOF',
+    condition: 'Novo',
+    location: 'Estúdio Principal A, Bissau',
+    assignedTo: 'Carlos Embaló',
+    serialNumber: 'FX3-SN-882910'
+  },
+  {
+    id: 'ast-2',
+    code: 'PGG-AUD-01',
+    name: 'Mesa de Mistura Digital Behringer X32',
+    category: 'Áudio & Transmissão',
+    acquisitionDate: '2023-08-20',
+    acquisitionCost: 1850000,
+    currency: 'XOF',
+    condition: 'Bom',
+    location: 'Régie de Transmissão, Bissau',
+    assignedTo: 'Eng. Domingos Lopes',
+    serialNumber: 'X32-DG-440192'
+  },
+  {
+    id: 'ast-3',
+    code: 'PGG-VEI-01',
+    name: 'Carrinha de Reportagem Móvel Toyota Hilux 4x4',
+    category: 'Veículos',
+    acquisitionDate: '2023-11-10',
+    acquisitionCost: 14500000,
+    currency: 'XOF',
+    condition: 'Bom',
+    location: 'Parque Automóvel PGG, Bissau',
+    assignedTo: 'Moisés Gomes',
+    serialNumber: 'MAT-GW-04-89-AB'
+  },
+  {
+    id: 'ast-4',
+    code: 'PGG-ENG-01',
+    name: 'Gerador a Diesel Perkins 25 kVA Silenciado',
+    category: 'Energia / Geradores',
+    acquisitionDate: '2024-02-15',
+    acquisitionCost: 5200000,
+    currency: 'XOF',
+    condition: 'Bom',
+    location: 'Pátio Técnico de Backup Elétrico, Bissau',
+    assignedTo: 'Eng. Domingos Lopes',
+    serialNumber: 'PERK-25K-7711'
+  },
+  {
+    id: 'ast-5',
+    code: 'PGG-INF-01',
+    name: 'Estação de Trabalho Apple Mac Studio M2 Max',
+    category: 'Informática',
+    acquisitionDate: '2024-05-30',
+    acquisitionCost: 1600000,
+    currency: 'XOF',
+    condition: 'Novo',
+    location: 'Sala de Edição de Vídeo',
+    assignedTo: 'Bernardo Na Fantchamna',
+    serialNumber: 'APL-MC-90812'
+  },
+  {
+    id: 'ast-6',
+    code: 'PGG-AUD-02',
+    name: 'Microfone de Estúdio Shure SM7B (Par)',
+    category: 'Áudio & Transmissão',
+    acquisitionDate: '2024-01-20',
+    acquisitionCost: 550000,
+    currency: 'XOF',
+    condition: 'Bom',
+    location: 'Cabine de Gravação de Voz',
+    assignedTo: 'Irmã Helena Vieira',
+    serialNumber: 'SH-SM7B-1122'
+  }
+];
+
+export const initialLiabilities: Liability[] = [
+  {
+    id: 'liab-1',
+    creditor: 'Empresa de Eletricidade e Águas da Guiné-Bissau (EAGB)',
+    description: 'Fatura de fornecimento elétrico do edifício sede e estúdio de gravação',
+    amount: 380000,
+    currency: 'XOF',
+    dueDate: '2026-11-30',
+    category: 'Serviços Públicos',
+    status: 'Pendente'
+  },
+  {
+    id: 'liab-2',
+    creditor: 'Proprietário do Edifício (Bairro de Santa Luzia)',
+    description: 'Renda mensal das instalações da redação e estúdios centrais em Bissau',
+    amount: 650000,
+    currency: 'XOF',
+    dueDate: '2026-12-05',
+    category: 'Aluguer',
+    status: 'Pendente'
+  },
+  {
+    id: 'liab-3',
+    creditor: 'Fornecedor de Cabos e Acessórios Tecnológicos Dakar',
+    description: 'Aquisição em prestações de 200m de cabo SDI blindado e baterias V-Mount',
+    amount: 420000,
+    currency: 'XOF',
+    dueDate: '2026-12-15',
+    category: 'Fornecedores de TI',
+    status: 'Parcial'
+  },
+  {
+    id: 'liab-4',
+    creditor: 'Oficina Mecânica Bissau Central',
+    description: 'Revisão periódica de filtros e travões da viatura de reportagem Toyota Hilux',
+    amount: 190000,
+    currency: 'XOF',
+    dueDate: '2026-11-25',
+    category: 'Manutenção',
+    status: 'Pendente'
+  }
+];
+
+export const initialTasks: Task[] = [
+  {
+    id: 'tsk-1',
+    title: 'Finalizar transmissão ao vivo do culto de Domingo',
+    departmentCode: 'TRANSMISSAO',
+    assignedTo: 'Eng. Domingos Lopes',
+    dueDate: '2026-11-22',
+    priority: 'Alta',
+    status: 'Em Progresso'
+  },
+  {
+    id: 'tsk-2',
+    title: 'Publicar reportagem da conferência em Oio com fotos',
+    departmentCode: 'REDACAO',
+    assignedTo: 'Irmã Helena Vieira',
+    dueDate: '2026-11-20',
+    priority: 'Alta',
+    status: 'Em Progresso'
+  },
+  {
+    id: 'tsk-3',
+    title: 'Criar capa e banners digitais para o single do Irmão Samuel',
+    departmentCode: 'DESIGN_GRAFICO',
+    assignedTo: 'Bernardo Na Fantchamna',
+    dueDate: '2026-11-21',
+    priority: 'Média',
+    status: 'Pendente'
+  },
+  {
+    id: 'tsk-4',
+    title: 'Preparar termo de compromisso para novo parceiro rádio FM',
+    departmentCode: 'SECRETARIA_GERAL',
+    assignedTo: 'Irmã Maria da Costa',
+    dueDate: '2026-11-24',
+    priority: 'Média',
+    status: 'Pendente'
+  }
+];
+
+export const initialSystemLogs: SystemLog[] = [
+  {
+    id: 'log-1',
+    timestamp: '2026-11-19 10:45:12',
+    user: 'Pr. Daniel Sanhá',
+    action: 'Criação de Artigo',
+    module: 'Notícias',
+    ip: '197.214.12.84 (Bissau)',
+    details: 'Publicou a notícia "Histórico Encontro Nacional de Lideranças Evangélicas"'
+  },
+  {
+    id: 'log-2',
+    timestamp: '2026-11-19 09:12:04',
+    user: 'Moisés Gomes',
+    action: 'Aprovação de Cobertura',
+    module: 'Correspondências',
+    ip: '197.214.12.84 (Bissau)',
+    details: 'Aprovou pedido COV-3 da Irmã Dulce Embaló e agendou na escala'
+  },
+  {
+    id: 'log-3',
+    timestamp: '2026-11-18 16:30:20',
+    user: 'Irmã Maria da Costa',
+    action: 'Registo Financeiro',
+    module: 'Finanças',
+    ip: '197.214.12.84 (Bissau)',
+    details: 'Registou entrada de 850.000 XOF via Wave (Dízimos & Ofertas)'
+  },
+  {
+    id: 'log-4',
+    timestamp: '2026-11-18 11:05:48',
+    user: 'Eng. Domingos Lopes',
+    action: 'Backup do Sistema',
+    module: 'Configurações',
+    ip: '197.214.14.102 (Bissau)',
+    details: 'Efetuou cópia de segurança completa (pgg_backup_20261118.json)'
+  }
+];
+
+export const initialBackups: Backup[] = [
+  {
+    id: 'bkp-1',
+    filename: 'pgg_backup_completo_20261118.json',
+    date: '2026-11-18 11:05',
+    size: '1.42 MB',
+    type: 'Completo',
+    recordsCount: 420,
+    createdBy: 'Eng. Domingos Lopes'
+  },
+  {
+    id: 'bkp-2',
+    filename: 'pgg_backup_financas_20261110.json',
+    date: '2026-11-10 18:22',
+    size: '280 KB',
+    type: 'Financeiro',
+    recordsCount: 65,
+    createdBy: 'Pr. Daniel Sanhá'
+  },
+  {
+    id: 'bkp-3',
+    filename: 'pgg_backup_conteudos_20261101.json',
+    date: '2026-11-01 09:00',
+    size: '890 KB',
+    type: 'Conteúdo',
+    recordsCount: 185,
+    createdBy: 'Irmã Helena Vieira'
+  }
+];
+
+export const initialVisitorPings: VisitorPing[] = [
+  {
+    id: 'ping-1',
+    ip: '197.214.12.84',
+    countryCode: 'GW',
+    countryName: 'Guiné-Bissau',
+    city: 'Bissau',
+    lat: 11.8632,
+    lng: -15.5984,
+    timestamp: '2026-11-19 11:10',
+    viewsCount: 28450
+  },
+  {
+    id: 'ping-2',
+    ip: '197.214.40.11',
+    countryCode: 'GW',
+    countryName: 'Guiné-Bissau',
+    city: 'Bafatá',
+    lat: 12.1667,
+    lng: -14.6667,
+    timestamp: '2026-11-19 10:40',
+    viewsCount: 5210
+  },
+  {
+    id: 'ping-3',
+    ip: '197.214.55.90',
+    countryCode: 'GW',
+    countryName: 'Guiné-Bissau',
+    city: 'Gabú',
+    lat: 12.2833,
+    lng: -14.2167,
+    timestamp: '2026-11-19 09:55',
+    viewsCount: 4180
+  },
+  {
+    id: 'ping-4',
+    ip: '197.214.88.22',
+    countryCode: 'GW',
+    countryName: 'Guiné-Bissau',
+    city: 'Canchungo',
+    lat: 12.0667,
+    lng: -16.0333,
+    timestamp: '2026-11-19 08:30',
+    viewsCount: 2340
+  },
+  {
+    id: 'ping-5',
+    ip: '194.65.120.45',
+    countryCode: 'PT',
+    countryName: 'Portugal',
+    city: 'Lisboa',
+    lat: 38.7223,
+    lng: -9.1393,
+    timestamp: '2026-11-19 11:05',
+    viewsCount: 6890
+  },
+  {
+    id: 'ping-6',
+    ip: '193.136.80.12',
+    countryCode: 'PT',
+    countryName: 'Portugal',
+    city: 'Porto',
+    lat: 41.1579,
+    lng: -8.6291,
+    timestamp: '2026-11-19 10:15',
+    viewsCount: 2450
+  },
+  {
+    id: 'ping-7',
+    ip: '196.207.210.5',
+    countryCode: 'SN',
+    countryName: 'Senegal',
+    city: 'Dakar',
+    lat: 14.7167,
+    lng: -17.4677,
+    timestamp: '2026-11-19 10:50',
+    viewsCount: 3120
+  },
+  {
+    id: 'ping-8',
+    ip: '82.124.90.14',
+    countryCode: 'FR',
+    countryName: 'França',
+    city: 'Paris',
+    lat: 48.8566,
+    lng: 2.3522,
+    timestamp: '2026-11-19 09:20',
+    viewsCount: 2980
+  },
+  {
+    id: 'ping-9',
+    ip: '197.149.12.44',
+    countryCode: 'CV',
+    countryName: 'Cabo Verde',
+    city: 'Praia',
+    lat: 14.9333,
+    lng: -23.5133,
+    timestamp: '2026-11-19 07:45',
+    viewsCount: 1650
+  },
+  {
+    id: 'ping-10',
+    ip: '187.60.210.89',
+    countryCode: 'BR',
+    countryName: 'Brasil',
+    city: 'São Paulo',
+    lat: -23.5505,
+    lng: -46.6333,
+    timestamp: '2026-11-19 06:10',
+    viewsCount: 1940
+  },
+  {
+    id: 'ping-11',
+    ip: '196.223.10.80',
+    countryCode: 'AO',
+    countryName: 'Angola',
+    city: 'Luanda',
+    lat: -8.8383,
+    lng: 13.2344,
+    timestamp: '2026-11-19 08:15',
+    viewsCount: 1820
+  },
+  {
+    id: 'ping-12',
+    ip: '104.28.19.4',
+    countryCode: 'US',
+    countryName: 'Estados Unidos',
+    city: 'Washington',
+    lat: 38.9072,
+    lng: -77.0369,
+    timestamp: '2026-11-19 04:30',
+    viewsCount: 1220
+  },
+  {
+    id: 'ping-13',
+    ip: '80.4.150.32',
+    countryCode: 'GB',
+    countryName: 'Reino Unido',
+    city: 'Londres',
+    lat: 51.5074,
+    lng: -0.1278,
+    timestamp: '2026-11-19 09:00',
+    viewsCount: 1120
+  }
+];

@@ -1,0 +1,22 @@
+{
+  "name": "portal-gospel-guineense",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "Frontend",
+    "Backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,yellow\" \"npm run dev --workspace=Backend\" \"npm run dev --workspace=Frontend\"",
+    "dev:all": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,yellow\" \"npm run dev --workspace=Backend\" \"npm run dev --workspace=Frontend\"",
+    "server": "npm run dev --workspace=Backend",
+    "backend": "npm run dev --workspace=Backend",
+    "frontend": "npm run dev --workspace=Frontend",
+    "build": "npm run build --workspace=Frontend",
+    "preview": "npm run preview --workspace=Frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
