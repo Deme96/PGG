@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "start": "tsx src/index.ts",
-    "build": "tsc",
-    "admin:bootstrap": "tsx scripts/bootstrapRootAdmin.ts"
+    "build": "tsc"
   },
   "dependencies": {
     "cors": "^2.8.5",

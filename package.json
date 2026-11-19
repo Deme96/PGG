@@ -13,7 +13,6 @@
     "server": "npm run dev --workspace=Backend",
     "backend": "npm run dev --workspace=Backend",
     "frontend": "npm run dev --workspace=Frontend",
-    "admin:bootstrap": "npm run admin:bootstrap --workspace=Backend",
     "build": "npm run build --workspace=Frontend",
     "preview": "npm run preview --workspace=Frontend"
   },

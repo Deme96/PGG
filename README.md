@@ -106,22 +106,13 @@ npm run dev:all
 ```
 *Inicia o Backend na porta `5000` e o Frontend Vite na porta `5173` (com proxy `/api` automático).*
 
-Configure a palavra-passe administrativa no ambiente do backend antes de iniciar os serviços:
-
-```powershell
-$env:PGG_ADMIN_BOOTSTRAP_PASSWORD = "uma-palavra-passe-forte"
-npm run admin:bootstrap
-Remove-Item Env:PGG_ADMIN_BOOTSTRAP_PASSWORD
-npm run dev:all
-```
-
-`PGG_ADMIN_BOOTSTRAP_PASSWORD` serve apenas para gravar uma vez o hash da conta principal; remova-a do ambiente depois. O login valida o hash guardado no ficheiro, não uma variável de ambiente. Para desenvolvimento local, copie `.env.example` para `.env`. `PGG_DATA_FILE` é opcional e permite indicar outro caminho para o JSON; se esse caminho ainda não existir, o backend cria uma cópia inicial de `Backend/data/db.json`.
+Para desenvolvimento local, copie `.env.example` para `.env`. `PGG_DATA_FILE` é opcional e permite indicar outro caminho para o JSON; se esse caminho ainda não existir, o backend cria uma cópia inicial de `Backend/data/db.json`.
 
 ### Deploy do backend no Render
 
 O `render.yaml` descreve o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`, mas o deploy pode ser configurado manualmente no Dashboard do Render. O frontend usa `VITE_API_URL` para chamar a API; atualize `Frontend/.env.production` se o endereço público mudar. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
-Para manter os dados entre deploys, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho dentro do disco (por exemplo, `/var/data/db.json`). Sem um disco persistente, as alterações ao ficheiro podem ser perdidas em reinícios ou novos deploys. Este armazenamento não coordena várias instâncias do backend; mantenha apenas uma. Defina temporariamente `PGG_ADMIN_BOOTSTRAP_PASSWORD` no serviço API e execute `npm run admin:bootstrap` no Shell; remova a variável depois. O acesso principal é `admin@portalgospel.gw` com a palavra-passe escolhida.
+Para manter os dados entre deploys, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho dentro do disco (por exemplo, `/var/data/db.json`). Sem um disco persistente, as alterações ao ficheiro podem ser perdidas em reinícios ou novos deploys. Este armazenamento não coordena várias instâncias do backend; mantenha apenas uma. A conta administrativa principal é `admin@portalgospel.gw`; a palavra-passe fica guardada como hash no ficheiro persistente, não numa variável de ambiente.
 
 Para um deploy manual do Static Site, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. `Frontend/.env.production` fornece o `VITE_API_URL`; uma variável de ambiente definida no Render pode substituí-lo. O endereço é incorporado ao bundle durante o build, então faça novo deploy após alterá-lo. Não coloque nele a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
@@ -145,6 +136,6 @@ O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulo
 
 ## Armazenamento e autenticação
 
-O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. O bootstrap cria a credencial inicial do administrador principal e as restantes contas podem receber palavra-passe pela área **Utilizadores e Privilégios**. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
+O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. As restantes contas podem receber ou alterar palavras-passe pela área **Utilizadores e Privilégios**. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
 
 Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.
