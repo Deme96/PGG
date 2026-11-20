@@ -6,6 +6,7 @@ import { GenericCRUDTable, Column, CustomAction } from '../common/GenericCRUDTab
 import { GenericModal } from '../common/GenericModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { KeyRound, ShieldCheck, Trash2, UserCog } from 'lucide-react';
+import { ImageUrlUploadField } from '../common/ImageUrlUploadField';
 
 const ROOT_ADMIN_EMAIL = 'admin@portalgospel.gw';
 
@@ -287,10 +288,15 @@ export const UsersPrivilegesManager: React.FC = () => {
                 Telefone
                 <input maxLength={40} value={phone} onChange={event => setPhone(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
               </label>
-              <label className="space-y-1.5 text-xs font-semibold text-slate-700 sm:col-span-2">
-                URL da fotografia
-                <input type="url" maxLength={2048} value={avatar} onChange={event => setAvatar(event.target.value)} placeholder="https://…" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
-              </label>
+              <div className="sm:col-span-2">
+                <ImageUrlUploadField
+                  label="Fotografia do utilizador"
+                  value={avatar}
+                  onChange={setAvatar}
+                  placeholder="https://… ou anexar do computador"
+                  compact
+                />
+              </div>
               {editingUser && isRootAdmin(editingUser) ? (
                 <>
                   <label className="space-y-1.5 text-xs font-semibold text-slate-700 sm:col-span-2">

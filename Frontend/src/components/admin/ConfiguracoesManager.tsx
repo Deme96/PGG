@@ -6,6 +6,7 @@ import { GenericCRUDTable, Column } from '../common/GenericCRUDTable';
 import { GenericModal } from '../common/GenericModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { UsersPrivilegesManager } from './UsersPrivilegesManager';
+import { ImageUrlUploadField } from '../common/ImageUrlUploadField';
 import {
   Settings,
   FileText,
@@ -917,17 +918,12 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Imagem URL
-              </label>
-              <input
-                type="url"
-                value={artImage}
-                onChange={e => setArtImage(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm"
-              />
-            </div>
+            <ImageUrlUploadField
+              label="Imagem da notícia"
+              value={artImage}
+              onChange={setArtImage}
+              placeholder="https://... ou anexar do computador"
+            />
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -1128,18 +1124,13 @@ export const ConfiguracoesManager: React.FC<ConfiguracoesManagerProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Imagem URL *
-              </label>
-              <input
-                type="url"
-                required
-                value={slideImg}
-                onChange={e => setSlideImg(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm"
-              />
-            </div>
+            <ImageUrlUploadField
+              label="Imagem do slide"
+              value={slideImg}
+              onChange={setSlideImg}
+              required
+              placeholder="https://... ou anexar do computador"
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <div>

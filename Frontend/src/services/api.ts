@@ -28,6 +28,24 @@ export const api = {
   // Health
   checkHealth: () => fetchJSON<{ status: string; timestamp: string }>(`${API_BASE}/health`),
 
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    const token = localStorage.getItem('pgg_admin_token');
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(`${API_BASE}/uploads/image`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(result?.error || `Falha ao enviar a imagem (${response.status}).`);
+    }
+    if (!result?.url) throw new Error('O servidor não devolveu o endereço da imagem.');
+    return String(result.url);
+  },
+
   // Settings
   getSettings: () => fetchJSON<any>(`${API_BASE}/settings`),
   updateSettings: (data: any) =>

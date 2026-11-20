@@ -20,6 +20,7 @@ import {
   removeMusicUpload,
   saveMusicUpload
 } from '../middleware/musicUpload.ts';
+import { parseImageUpload, saveImageUpload } from '../middleware/imageUpload.ts';
 
 const routeHandler = (handler: RequestHandler): RequestHandler => (req, res, next) => {
   try {
@@ -76,6 +77,7 @@ function isValidEmail(value: unknown): value is string {
 function isValidAvatar(value: unknown): value is string | undefined {
   if (value === undefined || value === '') return true;
   if (typeof value !== 'string' || value.length > 2048) return false;
+  if (value.startsWith('/api/uploads/')) return true;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' || url.protocol === 'http:';
@@ -85,6 +87,21 @@ function isValidAvatar(value: unknown): value is string | undefined {
 }
 
 // =================== HEALTH CHECK ===================
+apiRouter.post('/uploads/image', parseImageUpload, async (req: Request, res: Response) => {
+  if (!req.file) {
+    res.status(400).json({ error: 'Selecione uma imagem.' });
+    return;
+  }
+  try {
+    const url = await saveImageUpload(req.file);
+    res.status(201).json({ url });
+  } catch (error) {
+    res.status(400).json({
+      error: error instanceof Error ? error.message : 'Falha ao guardar a imagem.'
+    });
+  }
+});
+
 apiRouter.get('/health', async (req: Request, res: Response) => {
   await db.getSettings();
   res.json({
