@@ -31,8 +31,189 @@ const collectionNames = [
 ] as const;
 
 type CollectionName = (typeof collectionNames)[number];
+type RelationalCollectionName = Exclude<CollectionName, 'users'>;
 type DatabaseRecord = Record<string, unknown> & { id: string };
 type DatabaseFile = { settings: SiteSetting } & Record<CollectionName, DatabaseRecord[]>;
+
+const relationalCollectionNames = collectionNames.filter(
+  (collection): collection is RelationalCollectionName => collection !== 'users'
+);
+
+const collectionSyncOrder: RelationalCollectionName[] = [
+  'articles',
+  'departments',
+  'staff',
+  'coverage_requests',
+  'schedules',
+  'bookmarks',
+  'tasks',
+  'carousel_slides',
+  'videos',
+  'artists',
+  'partnerships',
+  'music_requests',
+  'finances',
+  'assets',
+  'liabilities',
+  'logs',
+  'backups',
+  'pings'
+];
+
+const collectionTables: Record<RelationalCollectionName, string> = {
+  carousel_slides: 'carousel_slides',
+  articles: 'articles',
+  videos: 'videos',
+  artists: 'artists',
+  departments: 'departments',
+  staff: 'staff',
+  schedules: 'schedules',
+  coverage_requests: 'coverage_requests',
+  partnerships: 'partnerships',
+  music_requests: 'music_requests',
+  bookmarks: 'bookmarks',
+  finances: 'finances',
+  assets: 'assets',
+  liabilities: 'liabilities',
+  tasks: 'tasks',
+  logs: 'system_logs',
+  backups: 'backups',
+  pings: 'visitor_pings'
+};
+
+const sqlRecordFieldAliases: Partial<Record<RelationalCollectionName, Record<string, string>>> = {
+  articles: {
+    author_role: 'authorRole',
+    published_date: 'date',
+    image_url: 'imageUrl',
+    read_time: 'readTime',
+    is_featured: 'isFeatured',
+    is_announcement: 'isAnnouncement'
+  },
+  videos: {
+    video_url: 'videoUrl',
+    youtube_id: 'youtubeId',
+    published_date: 'date'
+  },
+  artists: {
+    image_url: 'imageUrl',
+    popular_songs: 'popularSongs',
+    social_links: 'socialLinks'
+  },
+  carousel_slides: {
+    image_url: 'imageUrl',
+    button_text_pt: 'buttonText_pt',
+    button_text_en: 'buttonText_en',
+    button_text_fr: 'buttonText_fr',
+    button_link: 'buttonLink',
+    display_order: 'order'
+  },
+  departments: {
+    head_of_department: 'headOfDept',
+    icon_name: 'iconName'
+  },
+  staff: {
+    department_code: 'departmentCode',
+    admission_date: 'admissionDate',
+    emergency_contact: 'emergencyContact',
+    avatar_url: 'avatarUrl',
+    schedule_compliance_rating: 'scheduleComplianceRating',
+    assigned_tasks_count: 'assignedTasksCount'
+  },
+  schedules: {
+    service_name: 'serviceName',
+    department_code: 'departmentCode',
+    service_date: 'date',
+    start_time: 'startTime',
+    end_time: 'endTime',
+    staff_id: 'staffId',
+    staff_name: 'staffName',
+    staff_ids: 'staffIds',
+    staff_names: 'staffNames',
+    coverage_request_id: 'coverageRequestId'
+  },
+  coverage_requests: {
+    requester_name: 'requesterName',
+    requester_phone: 'requesterPhone',
+    requester_email: 'requesterEmail',
+    event_title: 'eventTitle',
+    event_type: 'eventType',
+    church_or_entity: 'churchOrEntity',
+    event_date: 'eventDate',
+    event_time: 'eventTime',
+    schedule_entry_id: 'scheduleEntryId',
+    created_at: 'createdAt'
+  },
+  partnerships: {
+    partner_name: 'partnerName',
+    partner_type: 'partnerType',
+    contact_person: 'contactPerson',
+    agreement_scope: 'agreementScope',
+    start_date: 'startDate',
+    end_date: 'endDate',
+    contribution_value: 'contributionValue'
+  },
+  music_requests: {
+    artist_name: 'artistName',
+    contact_phone: 'contactPhone',
+    contact_email: 'contactEmail',
+    song_title: 'songTitle',
+    audio_url: 'audioUrl',
+    cover_image_url: 'coverImageUrl',
+    requested_date: 'requestedDate',
+    session_type: 'sessionType'
+  },
+  bookmarks: {
+    user_id: 'userId',
+    article_id: 'articleId',
+    saved_at: 'savedAt'
+  },
+  finances: {
+    entry_date: 'date',
+    payment_method: 'paymentMethod',
+    registered_by: 'registeredBy'
+  },
+  assets: {
+    acquisition_date: 'acquisitionDate',
+    acquisition_cost: 'acquisitionCost',
+    assigned_to: 'assignedTo',
+    serial_number: 'serialNumber'
+  },
+  liabilities: {
+    due_date: 'dueDate'
+  },
+  tasks: {
+    department_code: 'departmentCode',
+    assigned_to: 'assignedTo',
+    due_date: 'dueDate'
+  },
+  logs: {
+    logged_at: 'timestamp',
+    user_name: 'user'
+  },
+  backups: {
+    created_at: 'date',
+    records_count: 'recordsCount',
+    created_by: 'createdBy'
+  },
+  pings: {
+    country_code: 'countryCode',
+    country_name: 'countryName',
+    latitude: 'lat',
+    longitude: 'lng',
+    visited_at: 'timestamp',
+    views_count: 'viewsCount'
+  }
+};
+
+type SqlColumn = {
+  name: string;
+  dataType: string;
+  nullable: boolean;
+  defaultValue: string | null;
+  identity: boolean;
+  generated: boolean;
+};
 
 const backupKeys: Record<CollectionName, string> = {
   carousel_slides: 'carouselSlides',
@@ -57,6 +238,19 @@ const backupKeys: Record<CollectionName, string> = {
 };
 
 const userTableMigration = 'users-from-app-state-v1';
+const collectionTableMigration = 'collections-to-relational-v1';
+
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
+function camelCaseColumn(column: string): string {
+  return column.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+}
+
+function recordFieldName(collection: RelationalCollectionName, column: string): string {
+  return sqlRecordFieldAliases[collection]?.[column] ?? camelCaseColumn(column);
+}
 
 type UserTableValues = {
   id: string;
@@ -131,6 +325,7 @@ const defaultFilePath = path.resolve(
 export class Database {
   private data: DatabaseFile | undefined;
   private pool: Pool | undefined;
+  private readonly relationalColumns = new Map<string, SqlColumn[]>();
 
   private get filePath(): string {
     const configuredPath = process.env.PGG_DATA_FILE?.trim();
@@ -213,6 +408,8 @@ export class Database {
           );
           if (!stateResult.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
           const data = this.parseFile(JSON.stringify(stateResult.rows[0].data), 'pgg_app_state');
+          await this.prepareCollectionTables(client);
+
           const migration = await client.query(
             'SELECT id FROM pgg_schema_migrations WHERE id = $1',
             [userTableMigration]
@@ -226,6 +423,35 @@ export class Database {
               [userTableMigration]
             );
           }
+
+          const collectionMigration = await client.query(
+            'SELECT id FROM pgg_schema_migrations WHERE id = $1',
+            [collectionTableMigration]
+          );
+          const relationalData = await this.readSqlCollections(client);
+          if (!collectionMigration.rows[0]) {
+            for (const collection of collectionSyncOrder) {
+              const existingIds = new Set(data[collection].map((record) => record.id));
+              data[collection].push(
+                ...relationalData[collection].filter((record) => !existingIds.has(record.id))
+              );
+            }
+            for (const collection of collectionSyncOrder) {
+              await this.upsertSqlCollection(client, collection, data[collection]);
+            }
+            for (const collection of [...collectionSyncOrder].reverse()) {
+              await this.deleteMissingSqlCollection(client, collection, data[collection]);
+            }
+            await client.query(
+              'INSERT INTO pgg_schema_migrations (id) VALUES ($1)',
+              [collectionTableMigration]
+            );
+          } else {
+            for (const collection of relationalCollectionNames) {
+              data[collection] = relationalData[collection];
+            }
+          }
+
           data.users = await this.readSqlUsers(client);
           await client.query(
             'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
@@ -355,6 +581,23 @@ export class Database {
       const index = draft[collection].findIndex((record) => record.id === id);
       if (index < 0) return false;
       draft[collection].splice(index, 1);
+      if (collection === 'articles' || collection === 'users') {
+        const field = collection === 'articles' ? 'articleId' : 'userId';
+        draft.bookmarks = draft.bookmarks.filter((bookmark) => bookmark[field] !== id);
+      }
+      if (collection === 'coverage_requests') {
+        draft.schedules = draft.schedules.map((schedule) => {
+          if (schedule.coverageRequestId !== id) return schedule;
+          const updated = { ...schedule };
+          delete updated.coverageRequestId;
+          return updated;
+        });
+      }
+      if (collection === 'staff') {
+        draft.schedules = draft.schedules.map((schedule) =>
+          schedule.staffId === id ? { ...schedule, staffId: '' } : schedule
+        );
+      }
       return true;
     });
   }
@@ -489,6 +732,7 @@ export class Database {
       );
       if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
       const data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+      Object.assign(data, await this.readSqlCollections(client));
       data.users = await this.readSqlUsers(client);
       await client.query('COMMIT');
       this.data = data;
@@ -604,6 +848,256 @@ export class Database {
     await client.query('DELETE FROM users WHERE NOT (id = ANY($1::text[]))', [users.map(user => user.id)]);
   }
 
+  private async prepareCollectionTables(client: PoolClient): Promise<void> {
+    for (const tableName of new Set(Object.values(collectionTables))) {
+      const table = `public.${quoteIdentifier(tableName)}`;
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${table} (
+          id text PRIMARY KEY,
+          record_data jsonb,
+          sort_order integer
+        )
+      `);
+      await client.query(`
+        ALTER TABLE ${table}
+          ADD COLUMN IF NOT EXISTS id text,
+          ADD COLUMN IF NOT EXISTS record_data jsonb,
+          ADD COLUMN IF NOT EXISTS sort_order integer
+      `);
+      const metadata = await client.query<{
+        column_name: string;
+        data_type: string;
+        is_nullable: string;
+        column_default: string | null;
+        is_identity: string;
+        is_generated: string;
+      }>(`
+        SELECT column_name, data_type, is_nullable, column_default, is_identity, is_generated
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1
+      `, [tableName]);
+      const idColumn = metadata.rows.find((column) => column.column_name === 'id');
+      const dataColumn = metadata.rows.find((column) => column.column_name === 'record_data');
+      if (
+        !idColumn ||
+        !['text', 'character varying', 'character'].includes(idColumn.data_type) ||
+        idColumn.is_identity === 'YES' ||
+        idColumn.is_generated !== 'NEVER'
+      ) {
+        throw new Error(`A tabela public.${tableName} precisa de uma coluna id do tipo texto.`);
+      }
+      await client.query(`
+        UPDATE ${table}
+        SET id = 'legacy-' || $1 || '-' || md5(ctid::text || now()::text)
+        WHERE id IS NULL
+      `, [tableName]);
+      if (!dataColumn) {
+        throw new Error(`Não foi possível preparar a coluna record_data em public.${tableName}.`);
+      }
+      if (dataColumn.data_type === 'json') {
+        await client.query(
+          `ALTER TABLE ${table} ALTER COLUMN record_data TYPE jsonb USING record_data::jsonb`
+        );
+      } else if (dataColumn.data_type !== 'jsonb') {
+        throw new Error(`A coluna public.${tableName}.record_data tem de ser JSON ou JSONB.`);
+      }
+
+      await client.query(`
+        UPDATE ${table} AS existing
+        SET record_data = to_jsonb(existing) - 'record_data' - 'sort_order'
+        WHERE record_data IS NULL
+      `);
+      await client.query(`
+        WITH missing_order AS (
+          SELECT ctid, row_number() OVER (ORDER BY id)::integer - 1 AS position
+          FROM ${table}
+          WHERE sort_order IS NULL
+        )
+        UPDATE ${table} AS existing
+        SET sort_order = missing_order.position
+        FROM missing_order
+        WHERE existing.ctid = missing_order.ctid
+      `);
+      await client.query(`ALTER TABLE ${table} ALTER COLUMN id SET NOT NULL`);
+      await client.query(`ALTER TABLE ${table} ALTER COLUMN record_data SET NOT NULL`);
+      await client.query(`ALTER TABLE ${table} ALTER COLUMN sort_order SET DEFAULT 0`);
+      await client.query(`ALTER TABLE ${table} ALTER COLUMN sort_order SET NOT NULL`);
+      await client.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS ${quoteIdentifier(`pgg_${tableName}_id_uidx`)}
+        ON ${table} (id)
+      `);
+
+      const columns = await client.query<{
+        column_name: string;
+        data_type: string;
+        is_nullable: string;
+        column_default: string | null;
+        is_identity: string;
+        is_generated: string;
+      }>(`
+        SELECT column_name, data_type, is_nullable, column_default, is_identity, is_generated
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1
+        ORDER BY ordinal_position
+      `, [tableName]);
+      this.relationalColumns.set(tableName, columns.rows.map((column) => ({
+        name: column.column_name,
+        dataType: column.data_type,
+        nullable: column.is_nullable === 'YES',
+        defaultValue: column.column_default,
+        identity: column.is_identity === 'YES',
+        generated: column.is_generated !== 'NEVER'
+      })));
+    }
+  }
+
+  private async readSqlCollections(
+    client: PoolClient
+  ): Promise<Record<RelationalCollectionName, DatabaseRecord[]>> {
+    const records: Record<RelationalCollectionName, DatabaseRecord[]> = {
+      carousel_slides: [],
+      articles: [],
+      videos: [],
+      artists: [],
+      departments: [],
+      staff: [],
+      schedules: [],
+      coverage_requests: [],
+      partnerships: [],
+      music_requests: [],
+      bookmarks: [],
+      finances: [],
+      assets: [],
+      liabilities: [],
+      tasks: [],
+      logs: [],
+      backups: [],
+      pings: []
+    };
+    const queries = relationalCollectionNames.map((collection) => `
+      SELECT '${collection}'::text AS collection, id::text AS id, record_data AS data, sort_order
+      FROM public.${quoteIdentifier(collectionTables[collection])}
+    `);
+    const result = await client.query<{
+      collection: RelationalCollectionName;
+      id: string;
+      data: unknown;
+    }>(`${queries.join(' UNION ALL ')} ORDER BY collection, sort_order, id`);
+
+    for (const row of result.rows) {
+      let value = row.data;
+      if (typeof value === 'string') {
+        try {
+          value = JSON.parse(value) as unknown;
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          throw new Error(
+            `JSON inválido em public.${collectionTables[row.collection]}.record_data: ${detail}`
+          );
+        }
+      }
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throw new Error(
+          `O registo ${row.id} em public.${collectionTables[row.collection]} não contém um objeto JSON.`
+        );
+      }
+      const normalized: Record<string, unknown> = {};
+      for (const [key, fieldValue] of Object.entries(value)) {
+        normalized[key] = fieldValue;
+        const recordField = recordFieldName(row.collection, key);
+        if (recordField !== key && !Object.prototype.hasOwnProperty.call(normalized, recordField)) {
+          normalized[recordField] = fieldValue;
+        }
+      }
+      normalized.id = row.id;
+      records[row.collection].push(normalized as DatabaseRecord);
+    }
+
+    return records;
+  }
+
+  private async deleteMissingSqlCollection(
+    client: PoolClient,
+    collection: RelationalCollectionName,
+    records: DatabaseRecord[]
+  ): Promise<void> {
+    const tableName = collectionTables[collection];
+    const table = `public.${quoteIdentifier(tableName)}`;
+    await client.query(
+      `DELETE FROM ${table} WHERE NOT (id::text = ANY($1::text[]))`,
+      [records.map((record) => record.id)]
+    );
+  }
+
+  private async upsertSqlCollection(
+    client: PoolClient,
+    collection: RelationalCollectionName,
+    records: DatabaseRecord[]
+  ): Promise<void> {
+    const tableName = collectionTables[collection];
+    const table = `public.${quoteIdentifier(tableName)}`;
+    const columns = this.relationalColumns.get(tableName);
+    if (!columns) throw new Error(`O esquema da tabela public.${tableName} não foi inicializado.`);
+
+    for (const [sortOrder, record] of records.entries()) {
+      const insertColumns: SqlColumn[] = [];
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      for (const column of columns) {
+        if (column.generated || (column.identity && column.name !== 'id')) continue;
+
+        let value: unknown;
+        let present = true;
+        if (column.name === 'id') value = record.id;
+        else if (column.name === 'record_data') value = JSON.stringify(record);
+        else if (column.name === 'sort_order') value = sortOrder;
+        else if (collection === 'schedules' && column.name === 'staff_id') {
+          value = typeof record.staffId === 'string' && record.staffId ? record.staffId : null;
+        } else {
+          const recordField = recordFieldName(collection, column.name);
+          if (Object.prototype.hasOwnProperty.call(record, column.name)) value = record[column.name];
+          else if (Object.prototype.hasOwnProperty.call(record, recordField)) {
+            value = record[recordField];
+          } else present = false;
+        }
+
+        if (!present) {
+          if (!column.nullable && column.defaultValue === null) {
+            throw new Error(
+              `O registo ${record.id} não fornece a coluna obrigatória ${column.name} de public.${tableName}.`
+            );
+          }
+          continue;
+        }
+
+        insertColumns.push(column);
+        values.push(
+          column.dataType === 'json' || column.dataType === 'jsonb'
+            ? (value === null ? null : JSON.stringify(value))
+            : value
+        );
+        const parameter = `$${values.length}`;
+        placeholders.push(
+          column.dataType === 'json' || column.dataType === 'jsonb'
+            ? `${parameter}::jsonb`
+            : parameter
+        );
+      }
+
+      const updates = insertColumns
+        .filter((column) => column.name !== 'id')
+        .map((column) => `${quoteIdentifier(column.name)} = EXCLUDED.${quoteIdentifier(column.name)}`);
+      const conflictAction = updates.length
+        ? `DO UPDATE SET ${updates.join(', ')}`
+        : 'DO NOTHING';
+      await client.query(`
+        INSERT INTO ${table} (${insertColumns.map((column) => quoteIdentifier(column.name)).join(', ')})
+        VALUES (${placeholders.join(', ')})
+        ON CONFLICT (id) ${conflictAction}
+      `, values);
+    }
+  }
+
   private parseFile(raw: string, source: string): DatabaseFile {
     let parsed: unknown;
     try {
@@ -659,11 +1153,27 @@ export class Database {
         );
         if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
         const draft = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+        Object.assign(draft, await this.readSqlCollections(client));
         draft.users = await this.readSqlUsers(client);
         const currentUsers = JSON.stringify(draft.users);
+        const currentCollections = new Map(
+          relationalCollectionNames.map((collection) => [
+            collection,
+            JSON.stringify(draft[collection])
+          ])
+        );
         const value = operation(draft);
         if (JSON.stringify(draft.users) !== currentUsers) {
           await this.syncSqlUsers(client, draft.users);
+        }
+        const changedCollections = collectionSyncOrder.filter(
+          (collection) => JSON.stringify(draft[collection]) !== currentCollections.get(collection)
+        );
+        for (const collection of changedCollections) {
+          await this.upsertSqlCollection(client, collection, draft[collection]);
+        }
+        for (const collection of [...changedCollections].reverse()) {
+          await this.deleteMissingSqlCollection(client, collection, draft[collection]);
         }
         await client.query(
           'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
