@@ -161,7 +161,7 @@ export class Database {
             avatar text,
             phone text,
             two_factor_enabled boolean NOT NULL DEFAULT false,
-            admin_permissions jsonb,
+            admin_permissions text[],
             is_active boolean NOT NULL DEFAULT true,
             password_hash text,
             password_salt text,
@@ -173,7 +173,7 @@ export class Database {
             ADD COLUMN IF NOT EXISTS avatar text,
             ADD COLUMN IF NOT EXISTS phone text,
             ADD COLUMN IF NOT EXISTS two_factor_enabled boolean NOT NULL DEFAULT false,
-            ADD COLUMN IF NOT EXISTS admin_permissions jsonb,
+            ADD COLUMN IF NOT EXISTS admin_permissions text[],
             ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
             ADD COLUMN IF NOT EXISTS password_hash text,
             ADD COLUMN IF NOT EXISTS password_salt text,
@@ -568,7 +568,7 @@ export class Database {
       INSERT INTO users (
         id, name, email, role, avatar, phone, two_factor_enabled,
         admin_permissions, is_active, password_hash, password_salt, sort_order
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         email = EXCLUDED.email,
@@ -589,7 +589,7 @@ export class Database {
       user.avatar,
       user.phone,
       user.twoFactorEnabled,
-      user.adminPermissions === null ? null : JSON.stringify(user.adminPermissions),
+      user.adminPermissions,
       user.isActive,
       user.passwordHash,
       user.passwordSalt,
