@@ -59,10 +59,12 @@ export const DepartamentosManager: React.FC<DepartamentosManagerProps> = ({
 
   // Map currentSubmenu to active department
   const activeSubmenuConfig = submenus.find(s => s.id === currentSubmenu) || submenus[0];
-  const activeDepartment = departments.find(d => d.code === activeSubmenuConfig.code) || departments[0];
+  const activeDepartment = departments.find(d => d.code === activeSubmenuConfig.code);
 
   // Team members belonging to this department
-  const deptStaff = staff.filter(s => s.departmentCode === activeDepartment.code);
+  const deptStaff = activeDepartment
+    ? staff.filter(s => s.departmentCode === activeDepartment.code)
+    : [];
 
   const handleOpenEdit = (dept: Department) => {
     setSelectedDept(dept);
@@ -105,6 +107,14 @@ export const DepartamentosManager: React.FC<DepartamentosManagerProps> = ({
 
     setEditModalOpen(false);
   };
+
+  if (!activeDepartment) {
+    return (
+      <section role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+        Não há departamentos configurados. Atualize os dados do sistema ou contacte o administrador.
+      </section>
+    );
+  }
 
   return (
     <div className="space-y-6">

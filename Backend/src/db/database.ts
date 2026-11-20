@@ -452,6 +452,15 @@ export class Database {
             }
           }
 
+          if (data.departments.length === 0) {
+            const seedData = this.parseFile(
+              readFileSync(defaultFilePath, 'utf8'),
+              defaultFilePath
+            );
+            data.departments = seedData.departments;
+            await this.upsertSqlCollection(client, 'departments', data.departments);
+          }
+
           data.users = await this.readSqlUsers(client);
           await client.query(
             'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
