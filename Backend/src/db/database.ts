@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 import type { SiteSetting, SystemLog } from '../types/index.ts';
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
@@ -56,6 +56,73 @@ const backupKeys: Record<CollectionName, string> = {
   users: 'users'
 };
 
+const userTableMigration = 'users-from-app-state-v1';
+
+type UserTableValues = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string | null;
+  phone: string | null;
+  twoFactorEnabled: boolean;
+  adminPermissions: string[] | null;
+  isActive: boolean;
+  passwordHash: string | null;
+  passwordSalt: string | null;
+  sortOrder: number;
+};
+
+function toUserTableValues(record: DatabaseRecord, sortOrder: number): UserTableValues {
+  const requiredString = (key: string): string => {
+    const value = record[key];
+    if (typeof value !== 'string') throw new Error(`O campo users.${key} é inválido.`);
+    return value;
+  };
+  const optionalString = (key: string): string | null => {
+    const value = record[key];
+    if (value === undefined || value === null) return null;
+    if (typeof value !== 'string') throw new Error(`O campo users.${key} é inválido.`);
+    return value;
+  };
+
+  const twoFactorEnabled = record.twoFactorEnabled;
+  if (twoFactorEnabled !== undefined && typeof twoFactorEnabled !== 'boolean') {
+    throw new Error('O campo users.twoFactorEnabled é inválido.');
+  }
+  const isActive = record.isActive;
+  if (isActive !== undefined && typeof isActive !== 'boolean') {
+    throw new Error('O campo users.isActive é inválido.');
+  }
+  const permissions = record.adminPermissions;
+  if (
+    permissions !== undefined && permissions !== null &&
+    (!Array.isArray(permissions) || permissions.some(permission => typeof permission !== 'string'))
+  ) {
+    throw new Error('O campo users.adminPermissions é inválido.');
+  }
+
+  const role = requiredString('role');
+  if (!['admin', 'journalist', 'artist', 'follower'].includes(role)) {
+    throw new Error('O campo users.role contém um perfil inválido.');
+  }
+
+  return {
+    id: requiredString('id'),
+    name: requiredString('name'),
+    email: requiredString('email'),
+    role,
+    avatar: optionalString('avatar'),
+    phone: optionalString('phone'),
+    twoFactorEnabled: twoFactorEnabled ?? false,
+    adminPermissions: Array.isArray(permissions) ? permissions : null,
+    isActive: isActive ?? true,
+    passwordHash: optionalString('passwordHash'),
+    passwordSalt: optionalString('passwordSalt'),
+    sortOrder
+  };
+}
+
 const defaultFilePath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../data/db.json'
@@ -85,6 +152,40 @@ export class Database {
           )
         `);
 
+        await this.pool.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id text PRIMARY KEY,
+            name text NOT NULL,
+            email text NOT NULL,
+            role text NOT NULL,
+            avatar text,
+            phone text,
+            two_factor_enabled boolean NOT NULL DEFAULT false,
+            admin_permissions jsonb,
+            is_active boolean NOT NULL DEFAULT true,
+            password_hash text,
+            password_salt text,
+            sort_order integer
+          )
+        `);
+        await this.pool.query(`
+          ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS avatar text,
+            ADD COLUMN IF NOT EXISTS phone text,
+            ADD COLUMN IF NOT EXISTS two_factor_enabled boolean NOT NULL DEFAULT false,
+            ADD COLUMN IF NOT EXISTS admin_permissions jsonb,
+            ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
+            ADD COLUMN IF NOT EXISTS password_hash text,
+            ADD COLUMN IF NOT EXISTS password_salt text,
+            ADD COLUMN IF NOT EXISTS sort_order integer
+        `);
+        await this.pool.query(`
+          CREATE TABLE IF NOT EXISTS pgg_schema_migrations (
+            id text PRIMARY KEY,
+            applied_at timestamptz NOT NULL DEFAULT now()
+          )
+        `);
+
         let result = await this.pool.query<{ data: unknown }>(
           'SELECT data FROM pgg_app_state WHERE id = $1',
           ['main']
@@ -102,7 +203,42 @@ export class Database {
           );
         }
         if (!result.rows[0]) throw new Error('Não foi possível inicializar o estado da base PostgreSQL.');
-        this.data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+
+        const client = await this.pool.connect();
+        try {
+          await client.query('BEGIN');
+          const stateResult = await client.query<{ data: unknown }>(
+            'SELECT data FROM pgg_app_state WHERE id = $1 FOR UPDATE',
+            ['main']
+          );
+          if (!stateResult.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
+          const data = this.parseFile(JSON.stringify(stateResult.rows[0].data), 'pgg_app_state');
+          const migration = await client.query(
+            'SELECT id FROM pgg_schema_migrations WHERE id = $1',
+            [userTableMigration]
+          );
+          if (!migration.rows[0]) {
+            for (const [index, user] of data.users.entries()) {
+              await this.upsertUser(client, user, index);
+            }
+            await client.query(
+              'INSERT INTO pgg_schema_migrations (id) VALUES ($1)',
+              [userTableMigration]
+            );
+          }
+          data.users = await this.readSqlUsers(client);
+          await client.query(
+            'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
+            [JSON.stringify(data), 'main']
+          );
+          await client.query('COMMIT');
+          this.data = data;
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
         return;
       } catch (error) {
         await this.pool.end();
@@ -295,13 +431,15 @@ export class Database {
       'Base de dados restaurada via API JSON'
     ));
     if (this.pool) {
-      await this.pool.query(
-        'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
-        [JSON.stringify(restored), 'main']
-      );
-    } else {
-      this.writeFile(restored);
+      await this.transact((draft) => {
+        draft.settings = restored.settings;
+        for (const collection of collectionNames) {
+          draft[collection] = restored[collection];
+        }
+      });
+      return;
     }
+    this.writeFile(restored);
     this.data = restored;
   }
 
@@ -342,13 +480,128 @@ export class Database {
 
   private async loadCurrentData(): Promise<DatabaseFile> {
     if (!this.pool) return this.getData();
-    const result = await this.pool.query<{ data: unknown }>(
-      'SELECT data FROM pgg_app_state WHERE id = $1',
-      ['main']
-    );
-    if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
-    this.data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
-    return this.data;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      const result = await client.query<{ data: unknown }>(
+        'SELECT data FROM pgg_app_state WHERE id = $1',
+        ['main']
+      );
+      if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
+      const data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+      data.users = await this.readSqlUsers(client);
+      await client.query('COMMIT');
+      this.data = data;
+      return data;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private async readSqlUsers(client: PoolClient): Promise<DatabaseRecord[]> {
+    const result = await client.query(`
+      SELECT id, name, email, role, avatar, phone, two_factor_enabled,
+             admin_permissions, is_active, password_hash, password_salt
+      FROM users
+      ORDER BY sort_order NULLS LAST, id
+    `);
+    return result.rows.map((row: Record<string, unknown>) => {
+      const text = (column: string, required = false): string | undefined => {
+        const value = row[column];
+        if (value === null || value === undefined) {
+          if (required) throw new Error(`A coluna users.${column} não pode ser nula.`);
+          return undefined;
+        }
+        if (typeof value !== 'string') throw new Error(`A coluna users.${column} é inválida.`);
+        return value;
+      };
+      const boolean = (column: string): boolean | undefined => {
+        const value = row[column];
+        if (value === null || value === undefined) return undefined;
+        if (typeof value !== 'boolean') throw new Error(`A coluna users.${column} é inválida.`);
+        return value;
+      };
+      const requiredText = (column: string): string => {
+        const value = text(column, true);
+        if (value === undefined) throw new Error(`A coluna users.${column} não pode ser nula.`);
+        return value;
+      };
+      const user: DatabaseRecord = {
+        id: requiredText('id'),
+        name: requiredText('name'),
+        email: requiredText('email'),
+        role: requiredText('role')
+      };
+      const role = user.role;
+      if (typeof role !== 'string' || !['admin', 'journalist', 'artist', 'follower'].includes(role)) {
+        throw new Error('A coluna users.role contém um perfil inválido.');
+      }
+      const avatar = text('avatar');
+      const phone = text('phone');
+      const passwordHash = text('password_hash');
+      const passwordSalt = text('password_salt');
+      const twoFactorEnabled = boolean('two_factor_enabled');
+      const isActive = boolean('is_active');
+      if (avatar !== undefined) user.avatar = avatar;
+      if (phone !== undefined) user.phone = phone;
+      if (passwordHash !== undefined) user.passwordHash = passwordHash;
+      if (passwordSalt !== undefined) user.passwordSalt = passwordSalt;
+      if (twoFactorEnabled !== undefined) user.twoFactorEnabled = twoFactorEnabled;
+      if (isActive !== undefined) user.isActive = isActive;
+      const permissions = row.admin_permissions;
+      if (permissions !== null && permissions !== undefined) {
+        if (!Array.isArray(permissions) || permissions.some(permission => typeof permission !== 'string')) {
+          throw new Error('A coluna users.admin_permissions contém dados inválidos.');
+        }
+        user.adminPermissions = permissions;
+      }
+      return user;
+    });
+  }
+
+  private async upsertUser(client: PoolClient, record: DatabaseRecord, sortOrder: number): Promise<void> {
+    const user = toUserTableValues(record, sortOrder);
+    await client.query(`
+      INSERT INTO users (
+        id, name, email, role, avatar, phone, two_factor_enabled,
+        admin_permissions, is_active, password_hash, password_salt, sort_order
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12)
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        email = EXCLUDED.email,
+        role = EXCLUDED.role,
+        avatar = EXCLUDED.avatar,
+        phone = EXCLUDED.phone,
+        two_factor_enabled = EXCLUDED.two_factor_enabled,
+        admin_permissions = EXCLUDED.admin_permissions,
+        is_active = EXCLUDED.is_active,
+        password_hash = EXCLUDED.password_hash,
+        password_salt = EXCLUDED.password_salt,
+        sort_order = EXCLUDED.sort_order
+    `, [
+      user.id,
+      user.name,
+      user.email,
+      user.role,
+      user.avatar,
+      user.phone,
+      user.twoFactorEnabled,
+      user.adminPermissions === null ? null : JSON.stringify(user.adminPermissions),
+      user.isActive,
+      user.passwordHash,
+      user.passwordSalt,
+      user.sortOrder
+    ]);
+  }
+
+  private async syncSqlUsers(client: PoolClient, users: DatabaseRecord[]): Promise<void> {
+    for (const [index, user] of users.entries()) {
+      await this.upsertUser(client, user, index);
+    }
+    await client.query('DELETE FROM users WHERE NOT (id = ANY($1::text[]))', [users.map(user => user.id)]);
   }
 
   private parseFile(raw: string, source: string): DatabaseFile {
@@ -406,7 +659,12 @@ export class Database {
         );
         if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
         const draft = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+        draft.users = await this.readSqlUsers(client);
+        const currentUsers = JSON.stringify(draft.users);
         const value = operation(draft);
+        if (JSON.stringify(draft.users) !== currentUsers) {
+          await this.syncSqlUsers(client, draft.users);
+        }
         await client.query(
           'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
           [JSON.stringify(draft), 'main']

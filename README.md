@@ -57,7 +57,7 @@ O backend expõe endpoints completos com respostas em JSON:
 | **Autenticação** | `POST` | `/api/auth/login` | Sessão administrativa validada pelo backend |
 | | `GET` | `/api/auth/session` | Validação da sessão administrativa |
 | | `POST` | `/api/auth/logout` | Terminar sessão administrativa |
-| | `POST` | `/api/auth/community/login`, `/api/auth/community/register` | Acesso de membros com credenciais guardadas no ficheiro JSON |
+| | `POST` | `/api/auth/community/login`, `/api/auth/community/register` | Acesso e registo de membros |
 | **Utilizadores** | `GET`, `POST` | `/api/auth/users` | Listar e criar contas de gestão (administrador principal) |
 | | `PUT`, `DELETE` | `/api/auth/users/:id` | Personalizar, desativar ou remover contas de gestão |
 
@@ -112,7 +112,7 @@ Para desenvolvimento local, copie `.env.example` para `.env`. `PGG_DATA_FILE` é
 
 O `render.yaml` descreve o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`, mas o deploy pode ser configurado manualmente no Dashboard do Render. O frontend usa `VITE_API_URL` para chamar a API; atualize `Frontend/.env.production` se o endereço público mudar. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
-O backend suporta PostgreSQL através da variável `DATABASE_URL`. Quando definida, cria a tabela `pgg_app_state` e guarda o estado do portal numa linha JSONB, mantendo a API de dados existente. Na primeira ligação a uma base vazia, importa o ficheiro indicado por `PGG_DATA_FILE` (ou `Backend/data/db.json` se o ficheiro não existir). Configure `DATABASE_URL` no serviço API do Render usando a ligação interna da base PostgreSQL; mantenha o ficheiro/disk antigo como cópia de recuperação até validar a migração.
+O backend suporta PostgreSQL através da variável `DATABASE_URL`. Quando definida, cria a tabela `pgg_app_state` e guarda as coleções do portal numa linha JSONB, mantendo a API de dados existente. As contas são guardadas na tabela relacional `users`; na primeira inicialização, os utilizadores existentes no JSONB são migrados para essa tabela. As alterações posteriores sincronizam a tabela `users` e a cópia JSONB usada pelos backups na mesma transação. Na primeira ligação a uma base vazia, importa o ficheiro indicado por `PGG_DATA_FILE` (ou `Backend/data/db.json` se o ficheiro não existir). Configure `DATABASE_URL` no serviço API do Render usando a ligação interna da base PostgreSQL; mantenha o ficheiro/disk antigo como cópia de recuperação até validar a migração.
 
 Sem `DATABASE_URL`, o backend continua a usar `Backend/data/db.json`. Para esse modo, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho no disco (por exemplo, `/var/data/db.json`); o modo ficheiro não coordena múltiplas instâncias. A conta administrativa principal é `admin@portalgospel.gw`; as palavras-passe são guardadas como hash.
 
