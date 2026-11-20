@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
+import { Pool } from 'pg';
 import type { SiteSetting, SystemLog } from '../types/index.ts';
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
@@ -62,6 +63,7 @@ const defaultFilePath = path.resolve(
 
 export class Database {
   private data: DatabaseFile | undefined;
+  private pool: Pool | undefined;
 
   private get filePath(): string {
     const configuredPath = process.env.PGG_DATA_FILE?.trim();
@@ -70,6 +72,44 @@ export class Database {
 
   public async initialize(): Promise<void> {
     if (this.data) return;
+
+    const connectionString = process.env.DATABASE_URL?.trim();
+    if (connectionString) {
+      this.pool = new Pool({ connectionString, max: 5 });
+      try {
+        await this.pool.query(`
+          CREATE TABLE IF NOT EXISTS pgg_app_state (
+            id text PRIMARY KEY,
+            data jsonb NOT NULL,
+            updated_at timestamptz NOT NULL DEFAULT now()
+          )
+        `);
+
+        let result = await this.pool.query<{ data: unknown }>(
+          'SELECT data FROM pgg_app_state WHERE id = $1',
+          ['main']
+        );
+        if (!result.rows[0]) {
+          const seedPath = existsSync(this.filePath) ? this.filePath : defaultFilePath;
+          const seedData = this.parseFile(readFileSync(seedPath, 'utf8'), seedPath);
+          await this.pool.query(
+            'INSERT INTO pgg_app_state (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING',
+            ['main', JSON.stringify(seedData)]
+          );
+          result = await this.pool.query<{ data: unknown }>(
+            'SELECT data FROM pgg_app_state WHERE id = $1',
+            ['main']
+          );
+        }
+        if (!result.rows[0]) throw new Error('Não foi possível inicializar o estado da base PostgreSQL.');
+        this.data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+        return;
+      } catch (error) {
+        await this.pool.end();
+        this.pool = undefined;
+        throw error;
+      }
+    }
 
     if (existsSync(this.filePath)) {
       this.data = this.parseFile(readFileSync(this.filePath, 'utf8'), this.filePath);
@@ -86,7 +126,7 @@ export class Database {
   }
 
   public async getSettings(): Promise<SiteSetting> {
-    return this.clone(this.getData().settings);
+    return this.clone((await this.loadCurrentData()).settings);
   }
 
   public async updateSettings(updates: Partial<SiteSetting>): Promise<SiteSetting> {
@@ -102,7 +142,7 @@ export class Database {
   }
 
   public async getCollection<T = DatabaseRecord>(collection: CollectionName): Promise<T[]> {
-    const rows = this.clone(this.getData()[collection]) as T[];
+    const rows = this.clone((await this.loadCurrentData())[collection]) as T[];
     const ordering: Partial<Record<CollectionName, { field: string; direction: 1 | -1 }>> = {
       carousel_slides: { field: 'order', direction: 1 },
       articles: { field: 'date', direction: -1 },
@@ -129,13 +169,13 @@ export class Database {
     collection: CollectionName,
     id: string
   ): Promise<T | undefined> {
-    const item = this.getData()[collection].find((record) => record.id === id);
+    const item = (await this.loadCurrentData())[collection].find((record) => record.id === id);
     return item ? this.clone(item) as T : undefined;
   }
 
   public async findUserByEmail<T = DatabaseRecord>(email: string): Promise<T | undefined> {
     const normalizedEmail = email.trim().toLowerCase();
-    const user = this.getData().users.find(
+    const user = (await this.loadCurrentData()).users.find(
       (record) => typeof record.email === 'string' && record.email.toLowerCase() === normalizedEmail
     );
     return user ? this.clone(user) as T : undefined;
@@ -164,8 +204,6 @@ export class Database {
     id: string,
     updates: Record<string, unknown>
   ): Promise<T | undefined> {
-    if (!this.getData()[collection].some((record) => record.id === id)) return undefined;
-
     return this.transact((draft) => {
       const index = draft[collection].findIndex((record) => record.id === id);
       if (index < 0) return undefined;
@@ -177,8 +215,6 @@ export class Database {
   }
 
   public async delete(collection: CollectionName, id: string): Promise<boolean> {
-    if (!this.getData()[collection].some((record) => record.id === id)) return false;
-
     return this.transact((draft) => {
       const index = draft[collection].findIndex((record) => record.id === id);
       if (index < 0) return false;
@@ -243,7 +279,7 @@ export class Database {
   }
 
   public async exportFullJSON(): Promise<string> {
-    const data = this.getData();
+    const data = await this.loadCurrentData();
     const exported: Record<string, unknown> = { siteSettings: data.settings };
     for (const collection of collectionNames) {
       exported[backupKeys[collection]] = data[collection];
@@ -258,12 +294,60 @@ export class Database {
       'Configurações',
       'Base de dados restaurada via API JSON'
     ));
-    this.writeFile(restored);
+    if (this.pool) {
+      await this.pool.query(
+        'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
+        [JSON.stringify(restored), 'main']
+      );
+    } else {
+      this.writeFile(restored);
+    }
     this.data = restored;
+  }
+
+  public async clearContentPreservingAdmin(): Promise<Record<string, number>> {
+    return this.transact((draft) => {
+      const rootAdmins = draft.users.filter((user) =>
+        user.role === 'admin' &&
+        typeof user.email === 'string' &&
+        user.email.toLowerCase() === 'admin@portalgospel.gw'
+      );
+      if (rootAdmins.length === 0) {
+        throw new Error('Limpeza cancelada: a conta de administrador principal não foi encontrada.');
+      }
+
+      const removed: Record<string, number> = {};
+      for (const collection of collectionNames) {
+        if (collection === 'users') continue;
+        removed[collection] = draft[collection].length;
+        draft[collection] = [];
+      }
+      removed.users = draft.users.length - rootAdmins.length;
+      draft.users = rootAdmins;
+      return removed;
+    });
+  }
+
+  public async close(): Promise<void> {
+    if (!this.pool) return;
+    const pool = this.pool;
+    this.pool = undefined;
+    await pool.end();
   }
 
   private getData(): DatabaseFile {
     if (!this.data) throw new Error('A base de dados em ficheiro ainda não foi inicializada.');
+    return this.data;
+  }
+
+  private async loadCurrentData(): Promise<DatabaseFile> {
+    if (!this.pool) return this.getData();
+    const result = await this.pool.query<{ data: unknown }>(
+      'SELECT data FROM pgg_app_state WHERE id = $1',
+      ['main']
+    );
+    if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
+    this.data = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
     return this.data;
   }
 
@@ -311,7 +395,33 @@ export class Database {
     renameSync(temporaryPath, this.filePath);
   }
 
-  private transact<T>(operation: (draft: DatabaseFile) => T): T {
+  private async transact<T>(operation: (draft: DatabaseFile) => T): Promise<T> {
+    if (this.pool) {
+      const client = await this.pool.connect();
+      try {
+        await client.query('BEGIN');
+        const result = await client.query<{ data: unknown }>(
+          'SELECT data FROM pgg_app_state WHERE id = $1 FOR UPDATE',
+          ['main']
+        );
+        if (!result.rows[0]) throw new Error('O estado principal não existe na base PostgreSQL.');
+        const draft = this.parseFile(JSON.stringify(result.rows[0].data), 'pgg_app_state');
+        const value = operation(draft);
+        await client.query(
+          'UPDATE pgg_app_state SET data = $1::jsonb, updated_at = now() WHERE id = $2',
+          [JSON.stringify(draft), 'main']
+        );
+        await client.query('COMMIT');
+        this.data = draft;
+        return this.clone(value);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
     const draft = this.clone(this.getData());
     const result = operation(draft);
     this.writeFile(draft);

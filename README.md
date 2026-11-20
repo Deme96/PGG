@@ -112,7 +112,11 @@ Para desenvolvimento local, copie `.env.example` para `.env`. `PGG_DATA_FILE` é
 
 O `render.yaml` descreve o serviço web `pgg-api` e o Static Site `portal-gospel-guineense`, mas o deploy pode ser configurado manualmente no Dashboard do Render. O frontend usa `VITE_API_URL` para chamar a API; atualize `Frontend/.env.production` se o endereço público mudar. O Render usa `/api/health` para verificar a disponibilidade do serviço.
 
-Para manter os dados entre deploys, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho dentro do disco (por exemplo, `/var/data/db.json`). Sem um disco persistente, as alterações ao ficheiro podem ser perdidas em reinícios ou novos deploys. Este armazenamento não coordena várias instâncias do backend; mantenha apenas uma. A conta administrativa principal é `admin@portalgospel.gw`; a palavra-passe fica guardada como hash no ficheiro persistente, não numa variável de ambiente.
+O backend suporta PostgreSQL através da variável `DATABASE_URL`. Quando definida, cria a tabela `pgg_app_state` e guarda o estado do portal numa linha JSONB, mantendo a API de dados existente. Na primeira ligação a uma base vazia, importa o ficheiro indicado por `PGG_DATA_FILE` (ou `Backend/data/db.json` se o ficheiro não existir). Configure `DATABASE_URL` no serviço API do Render usando a ligação interna da base PostgreSQL; mantenha o ficheiro/disk antigo como cópia de recuperação até validar a migração.
+
+Sem `DATABASE_URL`, o backend continua a usar `Backend/data/db.json`. Para esse modo, associe um **Persistent Disk** ao serviço API e defina `PGG_DATA_FILE` para um caminho no disco (por exemplo, `/var/data/db.json`); o modo ficheiro não coordena múltiplas instâncias. A conta administrativa principal é `admin@portalgospel.gw`; as palavras-passe são guardadas como hash.
+
+O comando `npm run clear:content --workspace=Backend` remove as coleções de conteúdo preservando as definições e a conta administrativa principal. Execute-o apenas depois de confirmar a ligação à base correta e obter uma cópia de segurança.
 
 Para um deploy manual do Static Site, use a raiz do repositório, o comando `npm ci --include=dev && npm run build --workspace=Frontend` e o diretório publicado `Frontend/dist`. `Frontend/.env.production` fornece o `VITE_API_URL`; uma variável de ambiente definida no Render pode substituí-lo. O endereço é incorporado ao bundle durante o build, então faça novo deploy após alterá-lo. Não coloque nele a palavra-passe administrativa. Para desenvolvimento local, copie `Frontend/.env.example` para `Frontend/.env`.
 
@@ -136,6 +140,6 @@ O build estático do Frontend é gerado em `Frontend/dist/` com todos os módulo
 
 ## Armazenamento e autenticação
 
-O backend usa `Backend/data/db.json` para configurações, conteúdo, contas e demais coleções; não é necessário configurar PostgreSQL. As palavras-passe são guardadas com hash scrypt. O administrador principal pode alterar a própria palavra-passe pela área **Utilizadores e Privilégios**, informando a atual e escolhendo uma nova com 12 a 128 caracteres; as restantes contas podem receber ou alterar palavras-passe nessa área. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
+O backend usa PostgreSQL quando `DATABASE_URL` está definido; sem essa variável, usa `Backend/data/db.json`. As palavras-passe são guardadas com hash scrypt. O administrador principal pode alterar a própria palavra-passe pela área **Utilizadores e Privilégios**, informando a atual e escolhendo uma nova com 12 a 128 caracteres; as restantes contas podem receber ou alterar palavras-passe nessa área. Os backups JSON incluem hashes de palavra-passe; trate-os como credenciais confidenciais.
 
 Os backups JSON contêm os hashes de palavra-passe das contas para permitir restauro completo; guarde-os como credenciais confidenciais.
