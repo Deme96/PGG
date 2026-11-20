@@ -149,7 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenA
             <img
               src="/logo-pgg.jpeg"
               alt=""
-              className="h-11 w-11 shrink-0 rounded-full border border-[#C9A44C] object-cover shadow-gold transition-transform group-hover:scale-105 sm:h-[3.25rem] sm:w-[3.25rem]"
+              className="h-14 w-14 shrink-0 rounded-full border border-[#C9A44C] object-cover shadow-gold transition-transform group-hover:scale-105 sm:h-16 sm:w-16"
             />
             <div className="min-w-0 font-heading font-bold uppercase leading-[0.95] tracking-wide text-white">
               <span className="block whitespace-nowrap text-sm sm:text-base lg:text-lg">
