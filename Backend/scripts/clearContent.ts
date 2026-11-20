@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, unlink, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, mkdir, readdir, unlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { db } from '../src/db/database.ts';
@@ -34,12 +34,14 @@ try {
     : [];
   const uploadBackupPath = `${backupPath}.uploads`;
   if (uploadFiles.length > 0) {
-    await mkdir(uploadBackupPath);
+    await mkdir(uploadBackupPath, { mode: 0o700 });
     for (const file of uploadFiles) {
+      const backupFile = path.join(uploadBackupPath, file.name);
       await copyFile(
         path.join(musicUploadsDirectory, file.name),
-        path.join(uploadBackupPath, file.name)
+        backupFile
       );
+      await chmod(backupFile, 0o600);
     }
   }
 
